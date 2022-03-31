@@ -43,10 +43,10 @@
       "win32",
       "win64"
     ],
-    "version": "latest",
+    "version": "0.62.2",
     "flavor": "normal",
     "buildDir": "./build",
-    "cacheDir": "./cache",
+    "cacheDir": "../nwjs-caches",
     "macIcns": "./src/logo.icns"
   }
 }
