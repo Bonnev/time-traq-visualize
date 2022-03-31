@@ -32,7 +32,7 @@ import {
 	Title,
 	Tooltip,
 	SubTitle
-  } from 'chart.js';
+} from 'chart.js';
 
 ReactDOM.render(
 	<React.StrictMode>
@@ -47,14 +47,37 @@ ReactDOM.render(
 const fs = require('fs');
 const contents = fs.readFileSync("./time-traq-stats.txt").toString();
 
-const labels = [
-	'January',
-	'February',
-	'March',
-	'April',
-	'May',
-	'June',
-];
+// const labels = [
+// 	'January',
+// 	'February',
+// 	'March',
+// 	'April',
+// 	'May',
+// 	'June',
+// ];
+
+const lines = contents.split('\n');
+
+const matrix = lines.map(line => line.split('\t'));
+
+const labels = [];
+const numbers = [];
+
+matrix.forEach((current, index) => {
+	if (index-1 < 0) return;
+
+	const prevRow = matrix[index-1];
+	const prevRowParts = prevRow[3].split(':');
+	const currentRowParts = current[3].split(':');
+
+	const prevRowSeconds = +prevRowParts[0] * 3600 + +prevRowParts[1] * 60 + +prevRowParts[2];
+	const currentRowSeconds = +currentRowParts[0] * 3600 + +currentRowParts[1] * 60 + +currentRowParts[2];
+
+	const durationSeconds = currentRowSeconds - prevRowSeconds;
+
+	labels.push(prevRow[0])
+	numbers.push(durationSeconds)
+})
 
 const data = {
 	labels: labels,
@@ -62,7 +85,7 @@ const data = {
 		label: 'My First dataset',
 		backgroundColor: 'rgb(255, 99, 132)',
 		borderColor: 'rgb(255, 99, 132)',
-		data: [0, 10, 5, 2, 20, 30, 45],
+		data: numbers,
 	}]
 };
 
