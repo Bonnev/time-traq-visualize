@@ -60,8 +60,7 @@ const lines = contents.split('\n');
 
 const matrix = lines.map(line => line.split('\t'));
 
-const labels = [];
-const numbers = [];
+const data = [];
 
 matrix.forEach((current, index) => {
 	if (index-1 < 0) return;
@@ -75,24 +74,53 @@ matrix.forEach((current, index) => {
 
 	const durationSeconds = currentRowSeconds - prevRowSeconds;
 
-	labels.push(prevRow[0])
-	numbers.push(durationSeconds)
+	data.push({
+		label: prevRow[0],
+		number: durationSeconds
+	});
+});
+
+const unique = [];
+
+data.forEach((datum) => {
+	if (!unique.map(u => u.label).includes(datum.label)) {
+		unique.push(datum);
+	}
 })
 
-const data = {
-	labels: labels,
+const dataForChart = {
+	labels: unique.map(u => u.label),
 	datasets: [{
 		label: 'My First dataset',
 		backgroundColor: 'rgb(255, 99, 132)',
 		borderColor: 'rgb(255, 99, 132)',
-		data: numbers,
+		data: unique.map(u => u.number),
 	}]
 };
 
 const config = {
 	type: 'bar',
-	data: data,
-	options: {}
+	data: dataForChart,
+	options: {
+		plugins: {
+			tooltip: {
+				callbacks: {
+					label: function(context) {
+						let label = context.dataset.label || '';
+
+						if (label) {
+							label += ': ';
+						}
+						if (context.parsed.y !== null) {
+							label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+						}
+						console.log(label)
+						return label;
+					}
+				}
+			}
+		}
+	}
 };
 
 Chart.register(
