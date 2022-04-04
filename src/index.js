@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+// import App from './App';
 import reportWebVitals from './reportWebVitals';
 
 //const Chart = require('chart.js');
@@ -45,7 +45,7 @@ ReactDOM.render(
 );
 
 const fs = require('fs');
-const contents = fs.readFileSync("./time-traq-stats.txt").toString();
+const contents = fs.readFileSync("./test-2020.04.04.txt").toString();
 
 // const labels = [
 // 	'January',
@@ -75,7 +75,7 @@ matrix.forEach((current, index) => {
 	const durationSeconds = currentRowSeconds - prevRowSeconds;
 
 	data.push({
-		label: prevRow[0],
+		label: current[0],
 		number: durationSeconds
 	});
 });
@@ -85,11 +85,15 @@ const unique = [];
 data.forEach((datum) => {
 	if (!unique.map(u => u.label).includes(datum.label)) {
 		unique.push(datum);
+	} else {
+		unique.find(u => u.label === datum.label).number += datum.number;
 	}
 })
 
+unique.sort((a,b)=> b.number - a.number);
+
 const dataForChart = {
-	labels: unique.map(u => u.label),
+	labels: unique.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)),
 	datasets: [{
 		label: 'My First dataset',
 		backgroundColor: 'rgb(255, 99, 132)',
@@ -106,16 +110,19 @@ const config = {
 			tooltip: {
 				callbacks: {
 					label: function(context) {
-						let label = context.dataset.label || '';
+						const number = context.parsed.y;
 
-						if (label) {
-							label += ': ';
-						}
-						if (context.parsed.y !== null) {
-							label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
-						}
-						console.log(label)
-						return label;
+						const hours = number / 3600;
+						const minutes = (number % 3600) / 60;
+						const seconds = (number % 3600) % 60;
+
+						return hours.toFixed(0).padStart(2, '0') + ':'
+							+ minutes.toFixed(0).padStart(2,  '0') + ':'
+							+ seconds.toFixed(0).padStart(2,  '0');
+					},
+					title: function(context) {
+						const index = context[0].parsed.x;
+						return unique[index].label;
 					}
 				}
 			}
@@ -150,7 +157,7 @@ Chart.register(
 	SubTitle
 );
 
-const myChart = new Chart(
+new Chart(
 	document.getElementById('myChart'),
 	config
 );
