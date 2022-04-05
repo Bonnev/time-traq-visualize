@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import './index.css';
 // import App from './App';
 import reportWebVitals from './reportWebVitals';
-
 //const Chart = require('chart.js');
 
 import {
@@ -33,6 +32,8 @@ import {
 	Tooltip,
 	SubTitle
 } from 'chart.js';
+
+var randomColor = require('randomcolor');
 
 ReactDOM.render(
 	<React.StrictMode>
@@ -90,16 +91,22 @@ data.forEach((datum) => {
 	}
 })
 
-unique.sort((a,b)=> b.number - a.number);
+// unique.sort((a,b)=> b.number - a.number);
 
 const dataForChart = {
-	labels: unique.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)),
-	datasets: [{
-		label: 'My First dataset',
-		backgroundColor: 'rgb(255, 99, 132)',
-		borderColor: 'rgb(255, 99, 132)',
-		data: unique.map(u => u.number),
-	}]
+	labels: data.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)).filter((a,ind)=>ind===0),
+	datasets: data.map((u,ind) => ({label: 'some', data: [u.number], backgroundColor: randomColor()}))
+	// [{
+	// 	label: 'My First dataset',
+	// 	backgroundColor: 'rgb(255, 99, 132)',
+	// 	borderColor: 'rgb(255, 99, 132)',
+	// 	data: unique.map(u => u.number),
+	// },{
+	// 	label: 'My First dataset',
+	// 	backgroundColor: 'rgb(0, 99, 132)',
+	// 	borderColor: 'rgb(0, 99, 132)',
+	// 	data: unique.map(u => u.number),
+	// }]
 };
 
 const config = {
@@ -109,24 +116,33 @@ const config = {
 		plugins: {
 			tooltip: {
 				callbacks: {
-					label: function(context) {
-						const number = context.parsed.y;
+					// label: function(context) {
+					// 	const number = context.parsed.y;
 
-						const hours = number / 3600;
-						const minutes = (number % 3600) / 60;
-						const seconds = (number % 3600) % 60;
+					// 	const hours = number / 3600;
+					// 	const minutes = (number % 3600) / 60;
+					// 	const seconds = (number % 3600) % 60;
 
-						return hours.toFixed(0).padStart(2, '0') + ':'
-							+ minutes.toFixed(0).padStart(2,  '0') + ':'
-							+ seconds.toFixed(0).padStart(2,  '0');
-					},
-					title: function(context) {
-						const index = context[0].parsed.x;
-						return unique[index].label;
-					}
+					// 	return hours.toFixed(0).padStart(2, '0') + ':'
+					// 		+ minutes.toFixed(0).padStart(2,  '0') + ':'
+					// 		+ seconds.toFixed(0).padStart(2,  '0');
+					// },
+					// title: function(context) {
+					// 	const index = context[0].parsed.x;
+					// 	return unique[index].label;
+					// }
 				}
 			}
-		}
+		},
+		scales: {
+			x: {
+				stacked:true
+			},
+			y:{
+				stacked: true
+			}
+		},
+		indexAxis: 'y'
 	}
 };
 
