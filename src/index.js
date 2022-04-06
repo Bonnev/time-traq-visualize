@@ -94,9 +94,20 @@ data.forEach((datum) => {
 
 // unique.sort((a,b)=> b.number - a.number);
 
+let page = 0;
+const filterDatasetsCallback = (datum, index) => {
+	//return ((page-1)*50) <= index && index < (page*50)
+	//return page-1 <= index && index < (page+50);
+	return (page*20) <= index && index < ((page*20)+50);
+}
+
+const getDatasets = () =>
+	data.map((u,ind) => ({label: (ind%5==0)? u.label : null, data: [u.number], backgroundColor: unique.get(u.label).color})).filter(filterDatasetsCallback);
+
+
 const dataForChart = {
 	labels: data.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)).filter((a,ind)=>ind===0),
-	datasets: data.map((u,ind) => ({label: u.label, data: [u.number], backgroundColor: unique.get(u.label).color})).filter((a,ind)=>ind<50),
+	datasets: getDatasets(),
 	// [{
 	// 	label: 'My First dataset',
 	// 	backgroundColor: 'rgb(255, 99, 132)',
@@ -179,11 +190,23 @@ const chartt = new Chart(
 	config
 );
 
-setInterval(function removeData(chart) {
-    // chartt.data.labels.pop();
-    chartt.data.datasets.pop();
-    chartt.update();
-}, 500)
+// setInterval(function removeData(chart) {
+//     // chartt.data.labels.pop();
+//     chartt.data.datasets.pop();
+//     chartt.update();
+// }, 500)
+
+window.onkeyup = function(event) {
+	if (event.code === 'PageDown') {
+		page++;
+		chartt.data.datasets = getDatasets();
+		chartt.update("none");
+	} else if (event.code === 'PageUp') {
+		page--;
+		chartt.data.datasets = getDatasets();
+		chartt.update("none");
+	}
+}
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
