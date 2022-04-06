@@ -81,13 +81,14 @@ matrix.forEach((current, index) => {
 	});
 });
 
-const unique = [];
+const unique = new Map();
 
 data.forEach((datum) => {
-	if (!unique.map(u => u.label).includes(datum.label)) {
-		unique.push(datum);
+	// keys() is an iterator, has to be converted to an array
+	if (!Array.from(unique.keys()).includes(datum.label)) {
+		unique.set(datum.label, {label: datum.label, number: datum.number, color: randomColor()});
 	} else {
-		unique.find(u => u.label === datum.label).number += datum.number;
+		unique.get(datum.label).number += datum.number;
 	}
 })
 
@@ -95,7 +96,7 @@ data.forEach((datum) => {
 
 const dataForChart = {
 	labels: data.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)).filter((a,ind)=>ind===0),
-	datasets: data.map((u,ind) => ({label: 'some', data: [u.number], backgroundColor: randomColor()}))
+	datasets: data.map((u,ind) => ({label: u.label, data: [u.number], backgroundColor: unique.get(u.label).color})).filter((a,ind)=>ind<50),
 	// [{
 	// 	label: 'My First dataset',
 	// 	backgroundColor: 'rgb(255, 99, 132)',
@@ -173,10 +174,16 @@ Chart.register(
 	SubTitle
 );
 
-new Chart(
+const chartt = new Chart(
 	document.getElementById('myChart'),
 	config
 );
+
+setInterval(function removeData(chart) {
+    // chartt.data.labels.pop();
+    chartt.data.datasets.pop();
+    chartt.update();
+}, 500)
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
