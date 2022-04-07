@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 // import App from './App';
 import reportWebVitals from './reportWebVitals';
+
 //const Chart = require('chart.js');
 
 import {
@@ -33,13 +34,13 @@ import {
 	SubTitle
 } from 'chart.js';
 
-var randomColor = require('randomcolor');
+const vis = require('vis-timeline');
+const {DataSet} = require('vis-data');
 
 ReactDOM.render(
 	<React.StrictMode>
-		<div>
-			<canvas id="myChart"></canvas>
-		</div>
+		{/* <canvas id="myChart"></canvas> */}
+		<div id="visualization"></div>
 		{/* <App /> */}
 	</React.StrictMode>,
 	document.getElementById('root')
@@ -67,8 +68,12 @@ matrix.forEach((current, index) => {
 	if (index-1 < 0) return;
 
 	const prevRow = matrix[index-1];
-	const prevRowParts = prevRow[3].split(':');
-	const currentRowParts = current[3].split(':');
+	
+	const prevRowTime = prevRow[3];
+	const prevRowParts = prevRowTime.split(':');
+	
+	const currentRowTime = current[3];
+	const currentRowParts = currentRowTime.split(':');
 
 	const prevRowSeconds = +prevRowParts[0] * 3600 + +prevRowParts[1] * 60 + +prevRowParts[2];
 	const currentRowSeconds = +currentRowParts[0] * 3600 + +currentRowParts[1] * 60 + +currentRowParts[2];
@@ -77,48 +82,32 @@ matrix.forEach((current, index) => {
 
 	data.push({
 		label: current[0],
-		number: durationSeconds
+		number: durationSeconds,
+		start: prevRowTime + '.001',
+		end: currentRowTime
 	});
 });
 
-const unique = new Map();
+const unique = [];
 
 data.forEach((datum) => {
-	// keys() is an iterator, has to be converted to an array
-	if (!Array.from(unique.keys()).includes(datum.label)) {
-		unique.set(datum.label, {label: datum.label, number: datum.number, color: randomColor()});
+	if (!unique.map(u => u.label).includes(datum.label)) {
+		unique.push(datum);
 	} else {
-		unique.get(datum.label).number += datum.number;
+		unique.find(u => u.label === datum.label).number += datum.number;
 	}
 })
 
-// unique.sort((a,b)=> b.number - a.number);
-
-let page = 0;
-const filterDatasetsCallback = (datum, index) => {
-	//return ((page-1)*50) <= index && index < (page*50)
-	//return page-1 <= index && index < (page+50);
-	return (page*20) <= index && index < ((page*20)+50);
-}
-
-const getDatasets = () =>
-	data.map((u,ind) => ({label: (ind%5==0)? u.label : null, data: [u.number], backgroundColor: unique.get(u.label).color})).filter(filterDatasetsCallback);
-
+unique.sort((a,b)=> b.number - a.number);
 
 const dataForChart = {
-	labels: data.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)).filter((a,ind)=>ind===0),
-	datasets: getDatasets(),
-	// [{
-	// 	label: 'My First dataset',
-	// 	backgroundColor: 'rgb(255, 99, 132)',
-	// 	borderColor: 'rgb(255, 99, 132)',
-	// 	data: unique.map(u => u.number),
-	// },{
-	// 	label: 'My First dataset',
-	// 	backgroundColor: 'rgb(0, 99, 132)',
-	// 	borderColor: 'rgb(0, 99, 132)',
-	// 	data: unique.map(u => u.number),
-	// }]
+	labels: unique.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)),
+	datasets: [{
+		label: 'My First dataset',
+		backgroundColor: 'rgb(255, 99, 132)',
+		borderColor: 'rgb(255, 99, 132)',
+		data: unique.map(u => u.number),
+	}]
 };
 
 const config = {
@@ -128,33 +117,24 @@ const config = {
 		plugins: {
 			tooltip: {
 				callbacks: {
-					// label: function(context) {
-					// 	const number = context.parsed.y;
+					label: function(context) {
+						const number = context.parsed.y;
 
-					// 	const hours = number / 3600;
-					// 	const minutes = (number % 3600) / 60;
-					// 	const seconds = (number % 3600) % 60;
+						const hours = number / 3600;
+						const minutes = (number % 3600) / 60;
+						const seconds = (number % 3600) % 60;
 
-					// 	return hours.toFixed(0).padStart(2, '0') + ':'
-					// 		+ minutes.toFixed(0).padStart(2,  '0') + ':'
-					// 		+ seconds.toFixed(0).padStart(2,  '0');
-					// },
-					// title: function(context) {
-					// 	const index = context[0].parsed.x;
-					// 	return unique[index].label;
-					// }
+						return hours.toFixed(0).padStart(2, '0') + ':'
+							+ minutes.toFixed(0).padStart(2,  '0') + ':'
+							+ seconds.toFixed(0).padStart(2,  '0');
+					},
+					title: function(context) {
+						const index = context[0].parsed.x;
+						return unique[index].label;
+					}
 				}
 			}
-		},
-		scales: {
-			x: {
-				stacked:true
-			},
-			y:{
-				stacked: true
-			}
-		},
-		indexAxis: 'y'
+		}
 	}
 };
 
@@ -185,28 +165,33 @@ Chart.register(
 	SubTitle
 );
 
-const chartt = new Chart(
-	document.getElementById('myChart'),
-	config
-);
+// new Chart(
+// 	document.getElementById('myChart'),
+// 	config
+// );
 
-// setInterval(function removeData(chart) {
-//     // chartt.data.labels.pop();
-//     chartt.data.datasets.pop();
-//     chartt.update();
-// }, 500)
+// DOM element where the Timeline will be attached
+var container = document.getElementById('visualization');
 
-window.onkeyup = function(event) {
-	if (event.code === 'PageDown') {
-		page++;
-		chartt.data.datasets = getDatasets();
-		chartt.update("none");
-	} else if (event.code === 'PageUp') {
-		page--;
-		chartt.data.datasets = getDatasets();
-		chartt.update("none");
-	}
-}
+var dataset = data.map((u,ind) => ({id: ind, content: u.label.substring(u.label.lastIndexOf('\\') + 1), start: '2022-04-07 ' + u.start, end: '2022-04-07 ' + u.end}));
+
+// var items = new DataSet([
+// 	{id: 1, content: 'item 1', start: '2014-04-20 10:00:00'},
+// 	{id: 2, content: 'item 2', start: '2014-04-14'},
+// 	{id: 3, content: 'item 3', start: '2014-04-18'},
+// 	{id: 4, content: 'item 4', start: '2014-04-16', end: '2014-04-19'},
+// 	{id: 5, content: 'item 5', start: '2014-04-25'},
+// 	{id: 6, content: 'item 6', start: '2014-04-27', type: 'point'}
+// ]);
+
+// Create a DataSet (allows two way data-binding)
+var items = new DataSet(dataset);
+
+// Configuration for the Timeline
+var options = {};
+
+// Create a Timeline
+var timeline = new vis.Timeline(container, items, options);
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
