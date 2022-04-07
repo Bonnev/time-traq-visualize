@@ -82,8 +82,9 @@ matrix.forEach((current, index) => {
 
 	data.push({
 		label: current[0],
+		process: current[0].substring(current[0].lastIndexOf('\\') + 1),
 		number: durationSeconds,
-		start: prevRowTime + '.001',
+		start: prevRowTime,
 		end: currentRowTime
 	});
 });
@@ -173,7 +174,12 @@ Chart.register(
 // DOM element where the Timeline will be attached
 var container = document.getElementById('visualization');
 
-var dataset = data.map((u,ind) => ({id: ind, content: u.label.substring(u.label.lastIndexOf('\\') + 1), start: '2022-04-07 ' + u.start, end: '2022-04-07 ' + u.end}));
+var groupsMap = new Map();
+var groups = unique.map((u,id) => ({id: id+data.length, content: u.process}));
+groups.forEach(u => groupsMap.set(u.content, u.id));
+
+
+var dataset = data.map((u,ind) => ({id: ind, content: u.process, start: '2022-04-07 ' + u.start, end: '2022-04-07 ' + u.end, group: groupsMap.get(u.process)}));
 
 // var items = new DataSet([
 // 	{id: 1, content: 'item 1', start: '2014-04-20 10:00:00'},
@@ -188,10 +194,11 @@ var dataset = data.map((u,ind) => ({id: ind, content: u.label.substring(u.label.
 var items = new DataSet(dataset);
 
 // Configuration for the Timeline
-var options = {};
+var options = {stack: false};
 
 // Create a Timeline
 var timeline = new vis.Timeline(container, items, options);
+timeline.setGroups(new DataSet(groups));
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
