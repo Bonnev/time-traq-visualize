@@ -84,7 +84,7 @@ matrix.forEach((current, index) => {
 	data.push({
 		label: current[0],
 		process: current[0].substring(current[0].lastIndexOf('\\') + 1),
-		title: current[1].substring(0, 50),
+		title: current[1].replace(/and \d+ more pages/, '').substring(0, 50),
 		number: durationSeconds,
 		start: timelineDate + ' ' + prevRowTime,
 		end: timelineDate + ' ' + currentRowTime
@@ -181,17 +181,31 @@ debugger;
 var subgroupsMap = new Map();
 var subgroupsItemsMap = new Map();
 var subgroups = data.map((u,id) => ({id: id, content: u.title, process: u.process}));
+
+subgroups = subgroups.reduce((acc, current) => !acc.find(el => el.content === current.content) ? acc.concat([current]) : acc, [])
+
 subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process, subgroupsMap.get(u.process).concat([u.id])) : subgroupsMap.set(u.process, [u.id]));
 subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
 
 var groupsMap = new Map();
-var groups = unique.map((u,id) => ({id: id+subgroups.length, content: u.process, nestedGroups: subgroupsMap.get(u.process) || undefined, showNested: false}));
+var groups = unique.map((u,id) => ({id: id+subgroups[subgroups.length-1].id+1, content: u.process, nestedGroups: subgroupsMap.get(u.process) || undefined, showNested: false}));
 groups.forEach(u => groupsMap.set(u.content, u.id));
 
+window.subgroups = subgroups;
+window.groups = groups;
 
+var dataset = data.map((u,ind) => ({id: ind, content: u.process, start: u.start, end: u.end, group: groupsMap.get(u.process)}));
 
-var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: groupsMap.get(u.process)}));
-dataset = dataset.concat(data.map((u,ind) => ({id: ind+data.length, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.title)})));
+for (let i = 1; i < dataset.length; i++) {
+	if (dataset[i-1].content === dataset[i].content && dataset[i-1].end === dataset[i].start) {
+		dataset[i-1].end = dataset[i].end;
+		dataset.splice(i, 1);
+		i--;
+	}
+}
+
+var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.title)}));
+dataset = dataset.concat(subgroupDataset);
 
 // var items = new DataSet([
 // 	{id: 1, content: 'item 1', start: '2014-04-20 10:00:00'},
