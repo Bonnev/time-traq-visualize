@@ -48,6 +48,7 @@ ReactDOM.render(
 
 const fs = require('fs');
 const contents = fs.readFileSync("./test-2020.04.04.txt").toString();
+const timelineDate = '2022-04-07';
 
 // const labels = [
 // 	'January',
@@ -83,9 +84,10 @@ matrix.forEach((current, index) => {
 	data.push({
 		label: current[0],
 		process: current[0].substring(current[0].lastIndexOf('\\') + 1),
+		title: current[1].substring(0, 50),
 		number: durationSeconds,
-		start: prevRowTime,
-		end: currentRowTime
+		start: timelineDate + ' ' + prevRowTime,
+		end: timelineDate + ' ' + currentRowTime
 	});
 });
 
@@ -174,12 +176,21 @@ Chart.register(
 // DOM element where the Timeline will be attached
 var container = document.getElementById('visualization');
 
+var subgroupsMap = new Map();
+var subgroupsItemsMap = new Map();
+var subgroups = data.map((u,id) => ({id: id, content: u.title, process: u.process}));
+subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process, subgroupsMap.get(u.process).concat[u.id]) : subgroupsMap.set(u.process, [u.id]));
+subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
+
 var groupsMap = new Map();
-var groups = unique.map((u,id) => ({id: id+data.length, content: u.process}));
+var groups = unique.map((u,id) => ({id: id+subgroups.length, content: u.process, nestedGroups: subgroupsMap.get(u.process) || undefined, showNested: false}));
 groups.forEach(u => groupsMap.set(u.content, u.id));
 
 
-var dataset = data.map((u,ind) => ({id: ind, content: u.process, start: '2022-04-07 ' + u.start, end: '2022-04-07 ' + u.end, group: groupsMap.get(u.process)}));
+debugger;
+
+var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: groupsMap.get(u.process)}));
+dataset = dataset.concat(data.map((u,ind) => ({id: ind+data.length, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.title)})));
 
 // var items = new DataSet([
 // 	{id: 1, content: 'item 1', start: '2014-04-20 10:00:00'},
@@ -198,7 +209,7 @@ var options = {stack: false};
 
 // Create a Timeline
 var timeline = new vis.Timeline(container, items, options);
-timeline.setGroups(new DataSet(groups));
+timeline.setGroups(new DataSet(groups.concat(subgroups)));
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
