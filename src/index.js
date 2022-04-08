@@ -63,7 +63,7 @@ const lines = contents.split('\n');
 
 const matrix = lines.map(line => line.split('\t'));
 
-const data = [];
+let data = [];
 
 matrix.forEach((current, index) => {
 	if (index-1 < 0) return;
@@ -176,10 +176,12 @@ Chart.register(
 // DOM element where the Timeline will be attached
 var container = document.getElementById('visualization');
 
+debugger;
+//data = data.filter((a,ind) => ind<50);
 var subgroupsMap = new Map();
 var subgroupsItemsMap = new Map();
 var subgroups = data.map((u,id) => ({id: id, content: u.title, process: u.process}));
-subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process, subgroupsMap.get(u.process).concat[u.id]) : subgroupsMap.set(u.process, [u.id]));
+subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process, subgroupsMap.get(u.process).concat([u.id])) : subgroupsMap.set(u.process, [u.id]));
 subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
 
 var groupsMap = new Map();
@@ -187,7 +189,6 @@ var groups = unique.map((u,id) => ({id: id+subgroups.length, content: u.process,
 groups.forEach(u => groupsMap.set(u.content, u.id));
 
 
-debugger;
 
 var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: groupsMap.get(u.process)}));
 dataset = dataset.concat(data.map((u,ind) => ({id: ind+data.length, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.title)})));
