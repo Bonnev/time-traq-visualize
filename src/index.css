@@ -18,6 +18,7 @@ html, body, div#root {
 
 div#root {
 	display: flex;
+	flex-direction: column;
 }
 
 #visualization {

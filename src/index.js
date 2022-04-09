@@ -40,6 +40,7 @@ const {DataSet} = require('vis-data');
 ReactDOM.render(
 	<React.StrictMode>
 		{/* <canvas id="myChart"></canvas> */}
+		<button onClick={showAllGroups}>Show all groups</button>
 		<div id="visualization"></div>
 		{/* <App /> */}
 	</React.StrictMode>,
@@ -180,7 +181,7 @@ debugger;
 //data = data.filter((a,ind) => ind<50);
 var subgroupsMap = new Map();
 var subgroupsItemsMap = new Map();
-var subgroups = data.map((u,id) => ({id: id, content: u.title, process: u.process}));
+var subgroups = data.map((u,id) => ({id: id, content: u.title, treeLevel: 2, process: u.process}));
 
 subgroups = subgroups.reduce((acc, current) => !acc.find(el => el.content === current.content) ? acc.concat([current]) : acc, [])
 
@@ -219,12 +220,50 @@ dataset = dataset.concat(subgroupDataset);
 // Create a DataSet (allows two way data-binding)
 var items = new DataSet(dataset);
 
+const allGroups = new DataSet(groups.concat(subgroups));
+window.allGroups = allGroups;
+
+function showAllGroups() {
+	const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
+	const groupIds = allGroups.map(gr => gr).filter(gr => gr.nestedGroups).map(gr => gr.id);
+
+	allGroups.update(nestedIds.map(g => ({ id: g, visible: true })));
+
+	setTimeout(() =>
+	allGroups.update(groupIds.map(g => ({ id: g, visible: true }))),
+	10);
+}
+
 // Configuration for the Timeline
-var options = {stack: false};
+var options = {
+	stack: false,
+	groupTemplate: function (group) {
+		var container = document.createElement("div");
+		var label = document.createElement("span");
+		label.innerHTML = group.content + " ";
+		container.insertAdjacentElement("afterBegin", label);
+		var hide = document.createElement("button");
+		hide.innerHTML = "hide";
+		hide.style.fontSize = "small";
+		hide.addEventListener("click", function () {
+			// nested groups can't be hidden if they are not expanded
+			// hide the top-level group first, then nested will show
+			allGroups.update({id: group.id, visible: false});
+			// then hide also the nested ones
+			if (group.nestedGroups.length) {
+				setTimeout(() =>
+					allGroups.update(group.nestedGroups.map(g => ({ id: g, visible: false }))),
+				10);
+			}
+		});
+		container.insertAdjacentElement("beforeEnd", hide);
+		return container;
+	},
+};
 
 // Create a Timeline
 var timeline = new vis.Timeline(container, items, options);
-timeline.setGroups(new DataSet(groups.concat(subgroups)));
+timeline.setGroups(allGroups);
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
