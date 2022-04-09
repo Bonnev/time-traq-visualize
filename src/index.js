@@ -223,17 +223,6 @@ var items = new DataSet(dataset);
 const allGroups = new DataSet(groups.concat(subgroups));
 window.allGroups = allGroups;
 
-function showAllGroups() {
-	const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
-	const groupIds = allGroups.map(gr => gr).filter(gr => gr.nestedGroups).map(gr => gr.id);
-
-	allGroups.update(nestedIds.map(g => ({ id: g, visible: true })));
-
-	setTimeout(() =>
-	allGroups.update(groupIds.map(g => ({ id: g, visible: true }))),
-	10);
-}
-
 // Configuration for the Timeline
 var options = {
 	stack: false,
@@ -264,6 +253,20 @@ var options = {
 // Create a Timeline
 var timeline = new vis.Timeline(container, items, options);
 timeline.setGroups(allGroups);
+
+function showAllGroups() {
+	const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
+	const groupIds = allGroups.map(gr => gr).filter(gr => gr.nestedGroups).map(gr => gr.id);
+
+	allGroups.update(nestedIds.map(g => ({ id: g, visible: true })));
+
+	setTimeout(() => {
+		allGroups.update(groupIds.map(g => ({ id: g, visible: true, showNested: false })));
+
+		// allGroups.map(gr => gr).filter(gr => gr.nestedGroups).forEach(g => timeline.itemSet.toggleGroupShowNested(g));
+	},
+	10);
+}
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
