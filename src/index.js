@@ -48,7 +48,8 @@ ReactDOM.render(
 );
 
 const fs = require('fs');
-const contents = fs.readFileSync("./test-2020.04.04.txt").toString();
+// fs.writeFileSync("C:\\input.txt", "marti karti");
+const contents = fs.readFileSync("C:\\input.txt").toString();
 const timelineDate = '2022-04-07';
 
 // const labels = [
