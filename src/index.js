@@ -51,6 +51,7 @@ const fs = require('fs');
 // fs.writeFileSync("C:\\input.txt", "marti karti");
 const contents = fs.readFileSync("C:\\input.txt").toString();
 const timelineDate = '2022-04-07';
+const nextDate = '2022-04-08';
 
 // const labels = [
 // 	'January',
@@ -86,7 +87,8 @@ matrix.forEach((current, index) => {
 	data.push({
 		label: current[0],
 		process: current[0].substring(current[0].lastIndexOf('\\') + 1),
-		title: current[1].replace(/and \d+ more pages/, '').substring(0, 50),
+		content: current[1].replace(/and \d+ more pages/, '').substring(0, 50),
+		title: current[1].replace(/and \d+ more pages/, ''),
 		number: durationSeconds,
 		start: timelineDate + ' ' + prevRowTime,
 		end: timelineDate + ' ' + currentRowTime
@@ -182,7 +184,7 @@ debugger;
 //data = data.filter((a,ind) => ind<50);
 var subgroupsMap = new Map();
 var subgroupsItemsMap = new Map();
-var subgroups = data.map((u,id) => ({id: id, content: u.title, treeLevel: 2, process: u.process}));
+var subgroups = data.map((u,id) => ({id: id, content: u.content, treeLevel: 2, process: u.process}));
 
 subgroups = subgroups.reduce((acc, current) => !acc.find(el => el.content === current.content) ? acc.concat([current]) : acc, [])
 
@@ -196,7 +198,7 @@ groups.forEach(u => groupsMap.set(u.content, u.id));
 window.subgroups = subgroups;
 window.groups = groups;
 
-var dataset = data.map((u,ind) => ({id: ind, content: u.process, start: u.start, end: u.end, group: groupsMap.get(u.process)}));
+var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process)}));
 
 for (let i = 1; i < dataset.length; i++) {
 	if (dataset[i-1].content === dataset[i].content && dataset[i-1].end === dataset[i].start) {
@@ -206,7 +208,7 @@ for (let i = 1; i < dataset.length; i++) {
 	}
 }
 
-var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.process} [${u.title}]`, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.title)}));
+var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content)}));
 dataset = dataset.concat(subgroupDataset);
 
 // var items = new DataSet([
@@ -227,6 +229,11 @@ window.allGroups = allGroups;
 // Configuration for the Timeline
 var options = {
 	stack: false,
+	tooltip: {
+		followMouse: true,
+	},
+	min: timelineDate, // lower limit of visible range
+	max: nextDate, // upper limit of visible range
 	groupTemplate: function (group) {
 		var container = document.createElement("div");
 		var label = document.createElement("span");
@@ -240,7 +247,7 @@ var options = {
 			// hide the top-level group first, then nested will show
 			allGroups.update({id: group.id, visible: false});
 			// then hide also the nested ones
-			if (group.nestedGroups.length) {
+			if (group.nestedGroups && group.nestedGroups.length) {
 				setTimeout(() =>
 					allGroups.update(group.nestedGroups.map(g => ({ id: g, visible: false }))),
 				10);
@@ -254,6 +261,24 @@ var options = {
 // Create a Timeline
 var timeline = new vis.Timeline(container, items, options);
 timeline.setGroups(allGroups);
+
+window.onkeyup = function (e) {
+	if (e.code === 'Space') {
+		// timeline.fit();
+	}
+}
+
+timeline.on("doubleClick", function (properties) {
+	var eventProps = timeline.getEventProperties(properties.event);
+	if (eventProps.what === "custom-time") {
+		timeline.removeCustomTime(eventProps.customTime);
+	} else {
+		var id = new Date().getTime();
+		var markerText = eventProps.time || undefined;
+		timeline.addCustomTime(eventProps.time, id);
+		timeline.setCustomTimeMarker(markerText, id);
+	}
+});
 
 function showAllGroups() {
 	const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
