@@ -35,6 +35,7 @@ import {
 } from 'chart.js';
 
 const randomColor = require('randomcolor')
+const { ColorTranslator: {getTints} } = require('colortranslator');
 
 const vis = require('vis-timeline');
 const {DataSet} = require('vis-data');
@@ -107,7 +108,7 @@ data.forEach((datum) => {
 	}
 })
 
-unique.map(u => Object.assign(u, {color: randomColor({luminosity: 'light'})}))
+unique.map(u => Object.assign(u, {color: randomColor(/*{luminosity: 'light'}*/)}))
 
 unique.sort((a,b)=> b.number - a.number);
 
@@ -196,6 +197,7 @@ var subgroups = data.map((u,id) => ({
 	style: `background-color: ${randomColor({hue: u.color})}`
 }));
 
+// remove duplicates
 subgroups = subgroups.reduce((acc, current) => !acc.find(el => el.content === current.content) ? acc.concat([current]) : acc, [])
 
 subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process, subgroupsMap.get(u.process).concat([u.id])) : subgroupsMap.set(u.process, [u.id]));
@@ -211,7 +213,11 @@ var groups = unique.map((u,id) => ({
 	style: `background-color: ${u.color}`
 }));
 groups.forEach(u => groupsMap.set(u.content, u));
-groups.unshift({id: 'all', content: 'All' })
+groups.unshift({id: 'all', content: 'All' });
+
+let subgroupColorsByGroup = subgroups.reduce((acc, current) => {acc[current.process] = (acc[current.process] || 0) + 1; return acc;}, {});
+Object.keys(subgroupColorsByGroup).forEach(current => subgroupColorsByGroup[current] = getTints(groupsMap.get(current).color, subgroupColorsByGroup[current]));
+subgroups.forEach((u,ind) => subgroups[ind].style = `background-color: ${subgroupColorsByGroup[u.process].shift()}`);
 
 window.subgroups = subgroups;
 window.groups = groups;
