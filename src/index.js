@@ -34,6 +34,8 @@ import {
 	SubTitle
 } from 'chart.js';
 
+const randomColor = require('randomcolor')
+
 const vis = require('vis-timeline');
 const {DataSet} = require('vis-data');
 
@@ -104,6 +106,8 @@ data.forEach((datum) => {
 		unique.find(u => u.label === datum.label).number += datum.number;
 	}
 })
+
+unique.map(u => Object.assign(u, {color: randomColor()}))
 
 unique.sort((a,b)=> b.number - a.number);
 
@@ -192,13 +196,15 @@ subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process,
 subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
 
 var groupsMap = new Map();
-var groups = unique.map((u,id) => ({id: id+subgroups[subgroups.length-1].id+1, content: u.process, nestedGroups: subgroupsMap.get(u.process) || undefined, showNested: false}));
-groups.forEach(u => groupsMap.set(u.content, u.id));
+var groups = unique.map((u,id) => ({id: id+subgroups[subgroups.length-1].id+1, content: u.process, nestedGroups: subgroupsMap.get(u.process) || undefined, showNested: false, color: u.color}));
+groups.forEach(u => groupsMap.set(u.content, u));
+groups.unshift({id: 'all', content: 'All' })
 
 window.subgroups = subgroups;
 window.groups = groups;
+window.groupsMap = groups;
 
-var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process)}));
+var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
 
 for (let i = 1; i < dataset.length; i++) {
 	if (dataset[i-1].content === dataset[i].content && dataset[i-1].end === dataset[i].start) {
@@ -211,6 +217,8 @@ for (let i = 1; i < dataset.length; i++) {
 var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content)}));
 dataset = dataset.concat(subgroupDataset);
 
+var allDataset = data.map((u,id) => ({id: 'all'+id, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}`}));
+dataset = dataset.concat(allDataset);
 // var items = new DataSet([
 // 	{id: 1, content: 'item 1', start: '2014-04-20 10:00:00'},
 // 	{id: 2, content: 'item 2', start: '2014-04-14'},
@@ -274,7 +282,11 @@ timeline.on("doubleClick", function (properties) {
 		timeline.removeCustomTime(eventProps.customTime);
 	} else {
 		var id = new Date().getTime();
-		var markerText = eventProps.time || undefined;
+		const time = eventProps.time;
+		const text = time.getHours().toFixed(0).padStart(2, '0') + ':'
+		+ time.getMinutes().toFixed(0).padStart(2,  '0') + ':'
+		+ time.getSeconds().toFixed(0).padStart(2,  '0');
+		var markerText = text || undefined;
 		timeline.addCustomTime(eventProps.time, id);
 		timeline.setCustomTimeMarker(markerText, id);
 	}
