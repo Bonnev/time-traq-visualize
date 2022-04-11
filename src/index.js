@@ -107,7 +107,7 @@ data.forEach((datum) => {
 	}
 })
 
-unique.map(u => Object.assign(u, {color: randomColor()}))
+unique.map(u => Object.assign(u, {color: randomColor({luminosity: 'light'})}))
 
 unique.sort((a,b)=> b.number - a.number);
 
@@ -188,7 +188,13 @@ debugger;
 //data = data.filter((a,ind) => ind<50);
 var subgroupsMap = new Map();
 var subgroupsItemsMap = new Map();
-var subgroups = data.map((u,id) => ({id: id, content: u.content, treeLevel: 2, process: u.process}));
+var subgroups = data.map((u,id) => ({
+	id: id,
+	content: u.content,
+	treeLevel: 2,
+	process: u.process,
+	style: `background-color: ${randomColor({hue: u.color})}`
+}));
 
 subgroups = subgroups.reduce((acc, current) => !acc.find(el => el.content === current.content) ? acc.concat([current]) : acc, [])
 
@@ -196,7 +202,14 @@ subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process,
 subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
 
 var groupsMap = new Map();
-var groups = unique.map((u,id) => ({id: id+subgroups[subgroups.length-1].id+1, content: u.process, nestedGroups: subgroupsMap.get(u.process) || undefined, showNested: false, color: u.color}));
+var groups = unique.map((u,id) => ({
+	id: id+subgroups[subgroups.length-1].id+1,
+	content: u.process,
+	nestedGroups: subgroupsMap.get(u.process) || undefined,
+	showNested: false,
+	color: u.color,
+	style: `background-color: ${u.color}`
+}));
 groups.forEach(u => groupsMap.set(u.content, u));
 groups.unshift({id: 'all', content: 'All' })
 
