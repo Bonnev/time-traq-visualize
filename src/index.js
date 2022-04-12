@@ -252,6 +252,7 @@ var items = new DataSet(dataset);
 
 const allGroups = new DataSet(groups.concat(subgroups));
 window.allGroups = allGroups;
+window.getTints = getTints;
 
 // Configuration for the Timeline
 var options = {
@@ -328,4 +329,4 @@ function showAllGroups() {
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+// reportWebVitals();
