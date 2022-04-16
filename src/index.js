@@ -66,7 +66,7 @@ const nextDate = '2022-04-08';
 
 const lines = contents.split('\n');
 
-const matrix = lines.map(line => line.split('\t'));
+const matrix = lines.filter(line => line.length).map(line => line.split('\t'));
 
 let data = [];
 
