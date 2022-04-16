@@ -13,7 +13,6 @@
     "moment": "^2.29.2",
     "nw-react-scripts": "4.0.4",
     "propagating-hammerjs": "^2.0.0",
-    "randomcolor": "^0.6.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "typescript": "^4.0.2",

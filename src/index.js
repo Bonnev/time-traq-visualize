@@ -34,7 +34,6 @@ import {
 	SubTitle
 } from 'chart.js';
 
-const randomColor = require('randomcolor')
 const { ColorTranslator: {getTints} } = require('colortranslator');
 
 const vis = require('vis-timeline');
@@ -108,7 +107,7 @@ data.forEach((datum) => {
 	}
 })
 
-unique.map(u => Object.assign(u, {color: randomColor(/*{luminosity: 'light'}*/)}))
+unique.map(u => Object.assign(u, {color: ownRandomColor()}))
 
 unique.sort((a,b)=> b.number - a.number);
 
@@ -185,6 +184,10 @@ Chart.register(
 // DOM element where the Timeline will be attached
 var container = document.getElementById('visualization');
 
+function ownRandomColor() {
+	return `#${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}`;
+}
+
 debugger;
 //data = data.filter((a,ind) => ind<50);
 var subgroupsMap = new Map();
@@ -194,7 +197,7 @@ var subgroups = data.map((u,id) => ({
 	content: u.content,
 	treeLevel: 2,
 	process: u.process,
-	style: `background-color: ${randomColor({hue: u.color})}`
+	style: `background-color: ${ownRandomColor()}`
 }));
 
 // remove duplicates
