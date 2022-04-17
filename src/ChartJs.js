@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-
+import { React, useEffect, useState, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { Chart } from './chart-wrapper';
 
 const initialConfig = {
@@ -26,12 +26,12 @@ const initialConfig = {
 };
 
 function ChartJs({data}) {
-	const [config, setConfig] = useState(Object.assign({}, initialConfig));
+	const [config] = useState(Object.assign({}, initialConfig));
 	const chart = useRef();
 
 	useEffect(() => {
 		if (!data || !data.length) return;
-		
+
 		const unique = [];
 
 		data.forEach((datum) => {
@@ -40,10 +40,10 @@ function ChartJs({data}) {
 			} else {
 				unique.find(u => u.label === datum.label).number += datum.number;
 			}
-		})
-		
+		});
+
 		unique.sort((a,b)=> b.number - a.number);
-		
+
 		const dataForChart = {
 			labels: unique.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)),
 			datasets: [{
@@ -57,10 +57,10 @@ function ChartJs({data}) {
 		config.options.plugins.tooltip.callbacks.title = function(context) {
 			const index = context[0].parsed.x;
 			return unique[index].label;
-		}
+		};
 
 		config.data = dataForChart;
-		
+
 		chart.current && chart.current.destroy();
 
 		const chartLocal = new Chart(document.getElementById('myChart'), config);
@@ -69,5 +69,17 @@ function ChartJs({data}) {
 
 	return <canvas id="myChart" />;
 }
+
+ChartJs.propTypes = {
+	data: PropTypes.arrayOf(PropTypes.shape({
+		label: PropTypes.string,
+		process: PropTypes.string,
+		content: PropTypes.string,
+		title: PropTypes.string,
+		number: PropTypes.number,
+		start: PropTypes.string,
+		end: PropTypes.string,
+	})).isRequired,
+};
 
 export default ChartJs;

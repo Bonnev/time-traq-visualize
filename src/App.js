@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { React, useEffect, useState } from 'react';
 
 import ChartJs from './ChartJs';
 import Timeline from './Timeline';
@@ -9,7 +9,7 @@ function App() {
 	useEffect(() => {
 		const fs = require('fs');
 		// fs.writeFileSync("C:\\input.txt", "marti karti");
-		const contents = fs.readFileSync("C:\\input.txt").toString();
+		const contents = fs.readFileSync('C:\\input.txt').toString();
 		const timelineDate = '2022-04-07';
 		// const nextDate = '2022-04-08';
 
@@ -23,10 +23,10 @@ function App() {
 			if (index-1 < 0) return;
 
 			const prevRow = matrix[index-1];
-			
+
 			const prevRowTime = prevRow[3];
 			const prevRowParts = prevRowTime.split(':');
-			
+
 			const currentRowTime = current[3];
 			const currentRowParts = currentRowTime.split(':');
 
@@ -48,7 +48,7 @@ function App() {
 
 		setData(data);
 	}, []);
-	
+
 	return (<>
 		<ChartJs data={data}></ChartJs>
 		<Timeline data={data}></Timeline>

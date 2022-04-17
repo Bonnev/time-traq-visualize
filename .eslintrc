@@ -1,0 +1,47 @@
+{
+	"extends": [
+		"nw-react-app",
+		"eslint:recommended",
+		"plugin:react/recommended"
+	],
+	"env": {
+		"browser": true,
+		"es2021": true,
+		"node": true
+	},
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"ecmaFeatures": {
+			"jsx": true
+		},
+		"ecmaVersion": "latest"
+	},
+	"plugins": [
+		"react"
+	],
+	"rules": {
+		"indent": [
+			"error",
+			"tab"
+		],
+		"linebreak-style": [
+			"error",
+			"unix"
+		],
+		"quotes": [
+			"error",
+			"single"
+		],
+		"semi": [
+			"error",
+			"always"
+		],
+		"no-trailing-spaces": [
+			"error"
+		],
+		"no-use-before-define": "off",
+		"@typescript-eslint/no-use-before-define": [
+			"error"
+		]
+	}
+}
