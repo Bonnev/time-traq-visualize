@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const vis = require('vis-timeline');
 const {DataSet} = require('vis-data');
@@ -10,7 +10,7 @@ function ownRandomColor() {
 }
 
 function Timeline({data}) {
-	const [timeline, setTimeline] = useState();
+	const timeline = useRef();
 	const [allGroups, setAllGroups] = useState([]);
 
 	const timelineDate = '2022-04-07';
@@ -100,6 +100,7 @@ function Timeline({data}) {
 			min: timelineDate, // lower limit of visible range
 			max: nextDate, // upper limit of visible range
 			groupTemplate: function (group) {
+				if (!group) return null;
 				var container = document.createElement("div");
 				var label = document.createElement("span");
 				label.innerHTML = group.content + " ";
@@ -123,13 +124,15 @@ function Timeline({data}) {
 			},
 		};
 
-		var timeline = new vis.Timeline(container, items, options);
-		timeline.setGroups(allGroups);
+		timeline.current && timeline.current.destroy();
 
-		timeline.on("doubleClick", function (properties) {
-			var eventProps = timeline.getEventProperties(properties.event);
+		const timelineLocal = new vis.Timeline(container, items, options);
+		timelineLocal.setGroups(allGroups);
+
+		timelineLocal.on("doubleClick", function (properties) {
+			var eventProps = timeline.current.getEventProperties(properties.event);
 			if (eventProps.what === "custom-time") {
-				timeline.removeCustomTime(eventProps.customTime);
+				timeline.current.removeCustomTime(eventProps.customTime);
 			} else {
 				var id = new Date().getTime();
 				const time = eventProps.time;
@@ -137,12 +140,18 @@ function Timeline({data}) {
 				+ time.getMinutes().toFixed(0).padStart(2,  '0') + ':'
 				+ time.getSeconds().toFixed(0).padStart(2,  '0');
 				var markerText = text || undefined;
-				timeline.addCustomTime(eventProps.time, id);
-				timeline.setCustomTimeMarker(markerText, id);
+				timeline.current.addCustomTime(eventProps.time, id);
+				timeline.current.setCustomTimeMarker(markerText, id);
 			}
 		});
 
-		setTimeline(timeline);
+		window.onkeyup = function (e) {
+			if (e.code === 'Space') {
+				// timeline.fit();
+			}
+		}
+
+		timeline.current = timelineLocal;
 		setAllGroups(allGroups);
 	}, [data]);
 	

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { Chart } from './chart-wrapper';
 
@@ -27,9 +27,11 @@ const initialConfig = {
 
 function ChartJs({data}) {
 	const [config, setConfig] = useState(Object.assign({}, initialConfig));
-	const [chart, setChart] = useState();
+	const chart = useRef();
 
 	useEffect(() => {
+		if (!data || !data.length) return;
+		
 		const unique = [];
 
 		data.forEach((datum) => {
@@ -56,9 +58,13 @@ function ChartJs({data}) {
 			const index = context[0].parsed.x;
 			return unique[index].label;
 		}
-		config.data = dataForChart;
 
-		setChart(new Chart(document.getElementById('myChart'), config));
+		config.data = dataForChart;
+		
+		chart.current && chart.current.destroy();
+
+		const chartLocal = new Chart(document.getElementById('myChart'), config);
+		chart.current = chartLocal;
 	}, [config, data]);
 
 	return <canvas id="myChart" />;
