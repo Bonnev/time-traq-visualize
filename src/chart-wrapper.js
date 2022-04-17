@@ -53,7 +53,7 @@ Chart.register(
 	SubTitle
 );
 
-const toExport = {
+export {
 	Chart,
 	ArcElement,
 	LineElement,
@@ -80,5 +80,3 @@ const toExport = {
 	Tooltip,
 	SubTitle
 };
-
-export default toExport;

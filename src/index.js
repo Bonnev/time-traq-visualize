@@ -1,68 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-// import App from './App';
+import ChartJs from './ChartJs';
 import reportWebVitals from './reportWebVitals';
-
-//const Chart = require('chart.js');
-
-import {
-	Chart,
-	ArcElement,
-	LineElement,
-	BarElement,
-	PointElement,
-	BarController,
-	BubbleController,
-	DoughnutController,
-	LineController,
-	PieController,
-	PolarAreaController,
-	RadarController,
-	ScatterController,
-	CategoryScale,
-	LinearScale,
-	LogarithmicScale,
-	RadialLinearScale,
-	TimeScale,
-	TimeSeriesScale,
-	Decimation,
-	Filler,
-	Legend,
-	Title,
-	Tooltip,
-	SubTitle
-} from 'chart.js';
 
 const { ColorTranslator: {getTints} } = require('colortranslator');
 
 const vis = require('vis-timeline');
 const {DataSet} = require('vis-data');
 
-ReactDOM.render(
-	<React.StrictMode>
-		{/* <canvas id="myChart"></canvas> */}
-		<button onClick={showAllGroups}>Show all groups</button>
-		<div id="visualization"></div>
-		{/* <App /> */}
-	</React.StrictMode>,
-	document.getElementById('root')
-);
-
 const fs = require('fs');
 // fs.writeFileSync("C:\\input.txt", "marti karti");
 const contents = fs.readFileSync("C:\\input.txt").toString();
 const timelineDate = '2022-04-07';
 const nextDate = '2022-04-08';
-
-// const labels = [
-// 	'January',
-// 	'February',
-// 	'March',
-// 	'April',
-// 	'May',
-// 	'June',
-// ];
 
 const lines = contents.split('\n');
 
@@ -111,85 +62,13 @@ unique.map(u => Object.assign(u, {color: ownRandomColor()}))
 
 unique.sort((a,b)=> b.number - a.number);
 
-const dataForChart = {
-	labels: unique.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)),
-	datasets: [{
-		label: 'My First dataset',
-		backgroundColor: 'rgb(255, 99, 132)',
-		borderColor: 'rgb(255, 99, 132)',
-		data: unique.map(u => u.number),
-	}]
-};
-
-const config = {
-	type: 'bar',
-	data: dataForChart,
-	options: {
-		plugins: {
-			tooltip: {
-				callbacks: {
-					label: function(context) {
-						const number = context.parsed.y;
-
-						const hours = number / 3600;
-						const minutes = (number % 3600) / 60;
-						const seconds = (number % 3600) % 60;
-
-						return hours.toFixed(0).padStart(2, '0') + ':'
-							+ minutes.toFixed(0).padStart(2,  '0') + ':'
-							+ seconds.toFixed(0).padStart(2,  '0');
-					},
-					title: function(context) {
-						const index = context[0].parsed.x;
-						return unique[index].label;
-					}
-				}
-			}
-		}
-	}
-};
-
-Chart.register(
-	ArcElement,
-	LineElement,
-	BarElement,
-	PointElement,
-	BarController,
-	BubbleController,
-	DoughnutController,
-	LineController,
-	PieController,
-	PolarAreaController,
-	RadarController,
-	ScatterController,
-	CategoryScale,
-	LinearScale,
-	LogarithmicScale,
-	RadialLinearScale,
-	TimeScale,
-	TimeSeriesScale,
-	Decimation,
-	Filler,
-	Legend,
-	Title,
-	Tooltip,
-	SubTitle
-);
-
-// new Chart(
-// 	document.getElementById('myChart'),
-// 	config
-// );
-
-// DOM element where the Timeline will be attached
-var container = document.getElementById('visualization');
-
 function ownRandomColor() {
 	return `#${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}`;
 }
 
-debugger;
+// debugger;
 //data = data.filter((a,ind) => ind<50);
+
 var subgroupsMap = new Map();
 var subgroupsItemsMap = new Map();
 var subgroups = data.map((u,id) => ({
@@ -222,9 +101,9 @@ let subgroupColorsByGroup = subgroups.reduce((acc, current) => {acc[current.proc
 Object.keys(subgroupColorsByGroup).forEach(current => subgroupColorsByGroup[current] = getTints(groupsMap.get(current).color, subgroupColorsByGroup[current]));
 subgroups.forEach((u,ind) => subgroups[ind].style = `background-color: ${subgroupColorsByGroup[u.process].shift()}`);
 
-window.subgroups = subgroups;
-window.groups = groups;
-window.groupsMap = groups;
+// window.subgroups = subgroups;
+// window.groups = groups;
+// window.groupsMap = groups;
 
 var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
 
@@ -241,14 +120,6 @@ dataset = dataset.concat(subgroupDataset);
 
 var allDataset = data.map((u,id) => ({id: 'all'+id, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}`}));
 dataset = dataset.concat(allDataset);
-// var items = new DataSet([
-// 	{id: 1, content: 'item 1', start: '2014-04-20 10:00:00'},
-// 	{id: 2, content: 'item 2', start: '2014-04-14'},
-// 	{id: 3, content: 'item 3', start: '2014-04-18'},
-// 	{id: 4, content: 'item 4', start: '2014-04-16', end: '2014-04-19'},
-// 	{id: 5, content: 'item 5', start: '2014-04-25'},
-// 	{id: 6, content: 'item 6', start: '2014-04-27', type: 'point'}
-// ]);
 
 // Create a DataSet (allows two way data-binding)
 var items = new DataSet(dataset);
@@ -256,6 +127,21 @@ var items = new DataSet(dataset);
 const allGroups = new DataSet(groups.concat(subgroups));
 window.allGroups = allGroups;
 window.getTints = getTints;
+
+ReactDOM.render(
+	<React.StrictMode>
+		<ChartJs data={data}></ChartJs>
+		{/* <canvas id="myChart"></canvas> */}
+		<button onClick={showAllGroups}>Show all groups</button>
+		<div id="visualization"></div>
+		{/* <App /> */}
+	</React.StrictMode>,
+	document.getElementById('root')
+);
+
+
+// DOM element where the Timeline will be attached
+var container = document.getElementById('visualization');
 
 // Configuration for the Timeline
 var options = {
@@ -323,8 +209,6 @@ function showAllGroups() {
 
 	setTimeout(() => {
 		allGroups.update(groupIds.map(g => ({ id: g, visible: true, showNested: false })));
-
-		// allGroups.map(gr => gr).filter(gr => gr.nestedGroups).forEach(g => timeline.itemSet.toggleGroupShowNested(g));
 	},
 	10);
 }
