@@ -1,7 +1,12 @@
 import { React, useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 
-const vis = require('vis-timeline');
+const moment = require('moment');
+const vis = require('vis-timeline/dist/vis-timeline-graph2d.min');
+
+const { patchItemSet } = require('./vis-timeline-background-tooltip-patch');
+patchItemSet(vis.util, vis.timeline);
+
 const {DataSet} = require('vis-data');
 
 const { ColorTranslator: {getTints} } = require('colortranslator');
@@ -12,6 +17,7 @@ function ownRandomColor() {
 
 function Timeline({data}) {
 	const timeline = useRef();
+	const markers = useRef([]);
 	const [allGroups, setAllGroups] = useState([]);
 
 	const timelineDate = '2022-04-07';
@@ -97,6 +103,7 @@ function Timeline({data}) {
 			stack: false,
 			tooltip: {
 				followMouse: true,
+				delay: 0
 			},
 			min: timelineDate, // lower limit of visible range
 			max: nextDate, // upper limit of visible range
@@ -134,15 +141,35 @@ function Timeline({data}) {
 			var eventProps = timeline.current.getEventProperties(properties.event);
 			if (eventProps.what === 'custom-time') {
 				timeline.current.removeCustomTime(eventProps.customTime);
+				const time = moment(eventProps.time).format('HH:mm:SS');
+				markers.current.splice(markers.current.findIndex(m => m === time), 1);
 			} else {
 				var id = new Date().getTime();
 				const time = eventProps.time;
 				const text = time.getHours().toFixed(0).padStart(2, '0') + ':'
-				+ time.getMinutes().toFixed(0).padStart(2,  '0') + ':'
-				+ time.getSeconds().toFixed(0).padStart(2,  '0');
+					+ time.getMinutes().toFixed(0).padStart(2, '0') + ':'
+					+ time.getSeconds().toFixed(0).padStart(2, '0');
 				var markerText = text || undefined;
 				timeline.current.addCustomTime(eventProps.time, id);
 				timeline.current.setCustomTimeMarker(markerText, id);
+
+				if (markers.current.length % 2 === 1) {
+					const start = markers.current[markers.current.length-1];
+					const end = text;
+					const duration = moment.duration(moment(end,'HH:mm:SS').subtract(moment(start,'HH:mm:SS')));
+					console.log(duration.toString());
+
+					items.add([{
+						id:'background' + (items.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
+						content: '',
+						title: `${start} -> ${end} (${duration.hours()}h${duration.minutes()}m${duration.seconds()}s)`,
+						start: timelineDate + ' ' + start,
+						end: timelineDate + ' ' + end,
+						type: 'background',
+					}]);
+				}
+
+				markers.current.push(text);
 			}
 		});
 

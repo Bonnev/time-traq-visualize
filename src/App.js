@@ -5,6 +5,7 @@ import Timeline from './Timeline';
 
 function App() {
 	const [data, setData] = useState([]);
+	const [showChart, setShowChart] = useState('timeline');
 
 	useEffect(() => {
 		const fs = require('fs');
@@ -50,8 +51,10 @@ function App() {
 	}, []);
 
 	return (<>
-		<ChartJs data={data}></ChartJs>
-		<Timeline data={data}></Timeline>
+		<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
+		<button onClick={()=>setShowChart('timeline')}>Timeline</button>
+		{showChart === 'chartjs' ? <ChartJs data={data}></ChartJs> : null}
+		{showChart === 'timeline' ? <Timeline data={data}></Timeline> : null}
 	</>);
 }
 
