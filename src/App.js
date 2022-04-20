@@ -5,12 +5,19 @@ import Timeline from './Timeline';
 
 function App() {
 	const [data, setData] = useState([]);
+	const [file, setFile] = useState();
 	const [showChart, setShowChart] = useState('timeline');
 
+	document.querySelector('#visualization') && (document.querySelector('#visualization').addEventListener('drop', (event) => {
+
+		setFile(event.dataTransfer.files[0].path);
+	}, {capture: true}));
+
 	useEffect(() => {
+		const filePath = file || 'C:\\input.txt';
 		const fs = require('fs');
 		// fs.writeFileSync("C:\\input.txt", "marti karti");
-		const contents = fs.readFileSync('C:\\input.txt').toString();
+		const contents = fs.readFileSync(filePath).toString();
 		const timelineDate = '2022-04-07';
 		// const nextDate = '2022-04-08';
 
@@ -48,7 +55,7 @@ function App() {
 		});
 
 		setData(data);
-	}, []);
+	}, [file]);
 
 	return (<>
 		<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
