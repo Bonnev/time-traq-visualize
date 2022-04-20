@@ -2,7 +2,9 @@ import { React, useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 const moment = require('moment');
-const vis = require('vis-timeline/dist/vis-timeline-graph2d.min');
+//const viсs = require('vis-timeline/dist/vis-timeline-graph2d.min');
+const vis = require('vis-timeline/standalone/esm/vis-timeline-graph2d.min');
+//const vis = require('vis-timeline');
 
 const { patchItemSet } = require('./vis-timeline-background-tooltip-patch');
 patchItemSet(vis.util, vis.timeline);
@@ -18,6 +20,7 @@ function ownRandomColor() {
 function Timeline({data}) {
 	const timeline = useRef();
 	const markers = useRef([]);
+	const task = useRef('');
 	const [allGroups, setAllGroups] = useState([]);
 
 	const timelineDate = '2022-04-07';
@@ -105,8 +108,8 @@ function Timeline({data}) {
 				followMouse: true,
 				delay: 0
 			},
-			min: timelineDate, // lower limit of visible range
-			max: nextDate, // upper limit of visible range
+			min: timelineDate + ' 07:30:00', // lower limit of visible range
+			max: timelineDate + ' 19:30:00', // upper limit of visible range
 			groupTemplate: function (group) {
 				if (!group) return null;
 				var container = document.createElement('div');
@@ -162,7 +165,7 @@ function Timeline({data}) {
 					items.add([{
 						id:'background' + (items.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
 						content: '',
-						title: `${start} -> ${end} (${duration.hours()}h${duration.minutes()}m${duration.seconds()}s)`,
+						title: `(${task.current}) ${start} -> ${end} (${duration.hours()}h${duration.minutes()}m${duration.seconds()}s)`,
 						start: timelineDate + ' ' + start,
 						end: timelineDate + ' ' + end,
 						type: 'background',
@@ -195,8 +198,13 @@ function Timeline({data}) {
 		10);
 	}
 
+	function taskInputHandler(event) {
+		task.current = event.target.value;
+	}
+
 	return (<>
 		<button onClick={showAllGroups}>Show all groups</button>
+		<input type="text" name="task" onChange={taskInputHandler} />
 		<div id='visualization'></div>
 	</>);
 }
