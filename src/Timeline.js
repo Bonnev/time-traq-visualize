@@ -11,8 +11,6 @@ patchItemSet(vis.util, vis.timeline);
 
 const {DataSet} = require('vis-data');
 
-const { ColorTranslator: {getTints} } = require('colortranslator');
-
 function ownRandomColor() {
 	return `#${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}`;
 }
@@ -30,7 +28,7 @@ function Timeline({data}) {
 		// DOM element where the Timeline will be attached
 		var container = document.getElementById('visualization');
 
-		const unique = [];
+		let unique = [];
 
 		data.forEach((datum) => {
 			if (!unique.map(u => u.label).includes(datum.label)) {
@@ -40,7 +38,7 @@ function Timeline({data}) {
 			}
 		});
 
-		unique.map(u => Object.assign(u, {color: ownRandomColor()}));
+		unique = unique.map(u => Object.assign(u, {color: ownRandomColor()}));
 
 		unique.sort((a,b)=> b.number - a.number);
 
@@ -72,13 +70,7 @@ function Timeline({data}) {
 		groups.forEach(u => groupsMap.set(u.content, u));
 		groups.unshift({id: 'all', content: 'All' });
 
-		let subgroupColorsByGroup = subgroups.reduce((acc, current) => {acc[current.process] = (acc[current.process] || 0) + 1; return acc;}, {});
-		Object.keys(subgroupColorsByGroup).forEach(current => subgroupColorsByGroup[current] = getTints(groupsMap.get(current).color, subgroupColorsByGroup[current]));
-		subgroups.forEach((u,ind) => subgroups[ind].style = `background-color: ${subgroupColorsByGroup[u.process].shift()}`);
-
-		// window.subgroups = subgroups;
-		// window.groups = groups;
-		// window.groupsMap = groups;
+		subgroups = subgroups.map(sub => Object.assign(sub, {style: `background-color: ${groupsMap.get(sub.process).color}`}));
 
 		var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
 
