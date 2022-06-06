@@ -33,7 +33,7 @@
 			"single"
 		],
 		"semi": [
-			"error",
+			"warn",
 			"always"
 		],
 		"no-trailing-spaces": [
@@ -42,6 +42,9 @@
 		"no-use-before-define": "off",
 		"@typescript-eslint/no-use-before-define": [
 			"error"
+		],
+		"no-unused-vars": [
+			"warn"
 		]
 	}
 }

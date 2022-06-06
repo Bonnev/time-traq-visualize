@@ -1,6 +1,7 @@
 import { React, useEffect, useState } from 'react';
 
 import ChartJs from './ChartJs';
+import FileDropper from './FileDropper';
 import Timeline from './Timeline';
 
 function App() {
@@ -8,12 +9,10 @@ function App() {
 	const [file, setFile] = useState();
 	const [showChart, setShowChart] = useState('timeline');
 
-	document.querySelector('#visualization') && (document.querySelector('#visualization').addEventListener('drop', (event) => {
-
-		setFile(event.dataTransfer.files[0].path);
-	}, {capture: true}));
-
 	useEffect(() => {
+		if (!file) {
+			return;
+		}
 		const filePath = file || 'C:\\input.txt';
 		const fs = require('fs');
 		// fs.writeFileSync("C:\\input.txt", "marti karti");
@@ -58,6 +57,7 @@ function App() {
 	}, [file]);
 
 	return (<>
+		<FileDropper setFile={setFile} />
 		<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
 		<button onClick={()=>setShowChart('timeline')}>Timeline</button>
 		{showChart === 'chartjs' ? <ChartJs data={data}></ChartJs> : null}
