@@ -2,8 +2,10 @@ import { React, useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 const moment = require('moment');
+const vis = require('vis-timeline/standalone/esm/vis-timeline-graph2d.min'); // minified
+// const vis = require('vis-timeline/standalone/esm/vis-timeline-graph2d'); // full source
+
 //const viсs = require('vis-timeline/dist/vis-timeline-graph2d.min');
-const vis = require('vis-timeline/standalone/esm/vis-timeline-graph2d.min');
 //const vis = require('vis-timeline');
 
 const { patchItemSet } = require('./vis-timeline-background-tooltip-patch');
@@ -152,7 +154,6 @@ function Timeline({data}) {
 					const start = markers.current[markers.current.length-1];
 					const end = text;
 					const duration = moment.duration(moment(end,'HH:mm:SS').subtract(moment(start,'HH:mm:SS')));
-					console.log(duration.toString());
 
 					items.add([{
 						id:'background' + (items.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
