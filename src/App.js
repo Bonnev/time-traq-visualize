@@ -56,12 +56,14 @@ function App() {
 		setData(data);
 	}, [file]);
 
+	const dataDuplicate = data.map(el => Object.assign({}, el));
+
 	return (<>
 		<FileDropper setFile={setFile} />
 		<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
 		<button onClick={()=>setShowChart('timeline')}>Timeline</button>
-		{showChart === 'chartjs' ? <ChartJs data={data}></ChartJs> : null}
-		{showChart === 'timeline' ? <Timeline data={data}></Timeline> : null}
+		{showChart === 'chartjs' ? <ChartJs data={dataDuplicate}></ChartJs> : null}
+		{showChart === 'timeline' ? <Timeline data={dataDuplicate}></Timeline> : null}
 	</>);
 }
 
