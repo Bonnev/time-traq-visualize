@@ -17,10 +17,17 @@ function ownRandomColor() {
 	return `#${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}`;
 }
 
+function ownRandomColorRGBA(opacity) {
+	return `rgba(${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${opacity})`;
+}
+
 function Timeline({data}) {
 	const timeline = useRef();
 	const markers = useRef([]);
 	const task = useRef('');
+	const autocompleteElement = useRef(null);
+	const backgroundsByTask = useRef({});
+
 	const [allGroups, setAllGroups] = useState([]);
 
 	const timelineDate = '2022-04-07';
@@ -76,13 +83,13 @@ function Timeline({data}) {
 
 		var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
 
-		for (let i = 1; i < dataset.length; i++) {
+		/*for (let i = 1; i < dataset.length; i++) {
 			if (dataset[i-1].content === dataset[i].content && dataset[i-1].end === dataset[i].start) {
 				dataset[i-1].end = dataset[i].end;
 				dataset.splice(i, 1);
 				i--;
 			}
-		}
+		}*/
 
 		var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content)}));
 		dataset = dataset.concat(subgroupDataset);
@@ -90,7 +97,6 @@ function Timeline({data}) {
 		var allDataset = data.map((u,id) => ({id: 'all'+id, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}`}));
 		dataset = dataset.concat(allDataset);
 
-		// Create a DataSet (allows two way data-binding)
 		var items = new DataSet(dataset);
 
 		const allGroups = new DataSet(groups.concat(subgroups));
@@ -155,12 +161,24 @@ function Timeline({data}) {
 					const end = text;
 					const duration = moment.duration(moment(end,'HH:mm:SS').subtract(moment(start,'HH:mm:SS')));
 
+					const color = backgroundsByTask.current[task.current]?.color || ownRandomColorRGBA(0.4);
+					if (!backgroundsByTask.current[task.current]) {
+						backgroundsByTask.current[task.current] = {color};
+
+						const newOption = document.createElement('option');
+						newOption.value = task.current;
+
+						const datalist = document.getElementById('tasks');
+						datalist.appendChild(newOption);
+					}
+
 					items.add([{
 						id:'background' + (items.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
 						content: '',
 						title: `(${task.current}) ${start} -> ${end} (${duration.hours()}h${duration.minutes()}m${duration.seconds()}s)`,
 						start: timelineDate + ' ' + start,
 						end: timelineDate + ' ' + end,
+						style: `background-color: ${color}`,
 						type: 'background',
 					}]);
 				}
@@ -197,7 +215,11 @@ function Timeline({data}) {
 
 	return (<>
 		<button onClick={showAllGroups}>Show all groups</button>
-		<input type="text" name="task" onChange={taskInputHandler} />
+		<input type="text" list="tasks" name="task"
+			placeholder="Task" onChange={taskInputHandler} />
+		<datalist id="tasks">
+			{/* <option value="0dlcjdnsjkcandckjandjkc"></option> */}
+		</datalist>
 		<div id='visualization'></div>
 	</>);
 }
