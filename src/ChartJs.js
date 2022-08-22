@@ -26,7 +26,7 @@ const initialConfig = {
 };
 
 function ChartJs({data}) {
-	const config = useRef(Object.assign({}, initialConfig));
+	const [config] = useState(Object.assign({}, initialConfig));
 	const chart = useRef();
 
 	useEffect(() => {
@@ -54,18 +54,18 @@ function ChartJs({data}) {
 			}]
 		};
 
-		config.current.options.plugins.tooltip.callbacks.title = function(context) {
+		config.options.plugins.tooltip.callbacks.title = function(context) {
 			const index = context[0].parsed.x;
 			return unique[index].label;
 		};
 
-		config.current.data = dataForChart;
+		config.data = dataForChart;
 
 		chart.current && chart.current.destroy();
 
-		const chartLocal = new Chart(document.getElementById('myChart'), config.current);
+		const chartLocal = new Chart(document.getElementById('myChart'), config);
 		chart.current = chartLocal;
-	}, [data]);
+	}, [config, data]);
 
 	return <canvas id="myChart" />;
 }

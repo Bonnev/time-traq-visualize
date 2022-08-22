@@ -39,6 +39,32 @@ function Timeline({data}) {
 
 		let unique = [];
 
+		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+']
+		let dataToAppend = [];
+		data.forEach((datum) => {
+			const matchingGroupIndex = groupsToCopy.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
+			if (matchingGroupIndex > -1) {
+				const matches = datum.title.match(new RegExp(groupsToCopy[matchingGroupIndex], 'g'));
+				if (matches && matches.length === 1) {
+					dataToAppend.push({...datum, process: matches[0],label: matches[0], extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})`});
+				}
+			}
+		});
+		data = data.concat(dataToAppend);
+
+		const groupsToExtract = [' - Personal - ']
+		const extractNewNames = ['Personal']
+		data.forEach((datum) => {
+			const matchingGroupIndex = groupsToExtract.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
+			if (matchingGroupIndex > -1) {
+				const matches = datum.title.match(new RegExp(groupsToExtract[matchingGroupIndex], 'g'));
+				if (matches && matches.length === 1) {
+					datum.process = extractNewNames[matchingGroupIndex];
+					datum.label = extractNewNames[matchingGroupIndex];
+				}
+			}
+		});
+
 		data.forEach((datum) => {
 			if (!unique.map(u => u.label).includes(datum.label)) {
 				unique.push(datum);
@@ -49,7 +75,19 @@ function Timeline({data}) {
 
 		unique = unique.map(u => Object.assign(u, {color: ownRandomColor()}));
 
-		unique.sort((a,b)=> b.number - a.number);
+		unique.sort((a,b) => {
+			if (a.extractedIndex && b.extractedIndex && b.extractedIndex - a.extractedIndex === 0) {
+				return b.number - a.number;
+			} else if (a.extractedIndex && b.extractedIndex) {
+				return a.extractedIndex - b.extractedIndex;
+			} else if (a.extractedIndex && !b.extractedIndex) {
+				return 1;
+			} else if (b.extractedIndex && !a.extractedIndex) {
+				return -1;
+			} else {
+				return b.number - a.number;
+			}
+		});
 
 		var subgroupsMap = new Map();
 		var subgroupsItemsMap = new Map();
@@ -81,7 +119,8 @@ function Timeline({data}) {
 
 		subgroups = subgroups.map(sub => Object.assign(sub, {style: `background-color: ${groupsMap.get(sub.process).color}`}));
 
-		var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
+		// var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
+		var dataset = data.map((u,ind) => ({id: ind, content: `${u.content} (${u.process})`, title: `${u.title} (${u.process})`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
 
 		/*for (let i = 1; i < dataset.length; i++) {
 			if (dataset[i-1].content === dataset[i].content && dataset[i-1].end === dataset[i].start) {
@@ -91,10 +130,10 @@ function Timeline({data}) {
 			}
 		}*/
 
-		var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content)}));
+		var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content)}));
 		dataset = dataset.concat(subgroupDataset);
 
-		var allDataset = data.map((u,id) => ({id: 'all'+id, content: `${u.process} [${u.content}]`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}`}));
+		var allDataset = data.map((u,id) => ({id: 'all'+id, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}`}));
 		dataset = dataset.concat(allDataset);
 
 		var items = new DataSet(dataset);
@@ -108,8 +147,6 @@ function Timeline({data}) {
 				followMouse: true,
 				delay: 0
 			},
-			min: timelineDate + ' 07:30:00', // lower limit of visible range
-			max: timelineDate + ' 19:30:00', // upper limit of visible range
 			groupTemplate: function (group) {
 				if (!group) return null;
 				var container = document.createElement('div');
