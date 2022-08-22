@@ -120,7 +120,33 @@ function Timeline({data}) {
 		subgroups = subgroups.map(sub => Object.assign(sub, {style: `background-color: ${groupsMap.get(sub.process).color}`}));
 
 		// var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
-		var dataset = data.map((u,ind) => ({id: ind, content: `${u.content} (${u.process})`, title: `${u.title} (${u.process})`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
+		var dataset = data.map((u,ind) => ({id: ind, content: `${u.content} (${u.process})`, title: `${u.title} (${u.process})`, start: u.start, end: u.end, group: groupsMap.get(u.process).id, style: `background-color: ${groupsMap.get(u.process).color}`}));
+
+		let globalEnd;
+		const groupEnds = {};
+		dataset.forEach(datum => {
+			const currentEnd = datum.end;
+			const currentGroup = datum.group;
+			const groupEnd = groupEnds[currentGroup];
+
+			if(!groupEnd || moment(groupEnd,'YYYY-MM-DD HH:mm:ss').isBefore(moment(currentEnd,'YYYY-MM-DD HH:mm:ss'))) {
+				groupEnds[currentGroup] = currentEnd;
+			}
+
+			if(!globalEnd || moment(globalEnd,'YYYY-MM-DD HH:mm:ss').isBefore(moment(currentEnd,'YYYY-MM-DD HH:mm:ss'))) {
+				globalEnd = currentEnd;
+			}
+		});
+
+		const endBackgrounds = Object.entries(groupEnds).map(([group, end])=>({
+			id:'endbackground' + group,
+			group: group,
+			content: 'END',
+			start: end,
+			end: globalEnd,
+			style: 'background-color: red; opacity: 0.3',
+			type: 'background',
+		}));
 
 		/*for (let i = 1; i < dataset.length; i++) {
 			if (dataset[i-1].content === dataset[i].content && dataset[i-1].end === dataset[i].start) {
@@ -136,7 +162,7 @@ function Timeline({data}) {
 		var allDataset = data.map((u,id) => ({id: 'all'+id, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}`}));
 		dataset = dataset.concat(allDataset);
 
-		var items = new DataSet(dataset);
+		var items = new DataSet(dataset.concat(endBackgrounds));
 
 		const allGroups = new DataSet(groups.concat(subgroups));
 
@@ -147,6 +173,7 @@ function Timeline({data}) {
 				followMouse: true,
 				delay: 0
 			},
+			orientation: 'both',
 			groupTemplate: function (group) {
 				if (!group) return null;
 				var container = document.createElement('div');
@@ -181,7 +208,7 @@ function Timeline({data}) {
 			var eventProps = timeline.current.getEventProperties(properties.event);
 			if (eventProps.what === 'custom-time') {
 				timeline.current.removeCustomTime(eventProps.customTime);
-				const time = moment(eventProps.time).format('HH:mm:SS');
+				const time = moment(eventProps.time).format('HH:mm:ss');
 				markers.current.splice(markers.current.findIndex(m => m === time), 1);
 			} else {
 				var id = new Date().getTime();
@@ -196,7 +223,7 @@ function Timeline({data}) {
 				if (markers.current.length % 2 === 1) {
 					const start = markers.current[markers.current.length-1];
 					const end = text;
-					const duration = moment.duration(moment(end,'HH:mm:SS').subtract(moment(start,'HH:mm:SS')));
+					const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
 
 					const color = backgroundsByTask.current[task.current]?.color || ownRandomColorRGBA(0.4);
 					if (!backgroundsByTask.current[task.current]) {
