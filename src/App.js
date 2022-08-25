@@ -58,8 +58,10 @@ function App() {
 
 	return (<>
 		<FileDropper setFile={setFile} />
-		<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
-		<button onClick={()=>setShowChart('timeline')}>Timeline</button>
+		<div className='flex-container-with-equal-children'>
+			<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
+			<button onClick={()=>setShowChart('timeline')}>Timeline</button>
+		</div>
 		{showChart === 'chartjs' ? <ChartJs data={data}></ChartJs> : null}
 		{showChart === 'timeline' ? <Timeline data={data}></Timeline> : null}
 	</>);

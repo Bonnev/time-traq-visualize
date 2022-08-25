@@ -51,3 +51,27 @@ div#root {
 #root.children-clickthrough * {
 	pointer-events: none;
 }
+
+div.flexible-modal-drag-area-left, div.flexible-modal-drag-area-bottom, div.flexible-modal-drag-area-right {
+	display: none;
+}
+
+div.flexible-modal {
+	position: fixed;
+}
+
+div.flex-container-with-equal-children {
+	display: flex;
+}
+
+div.flex-container-with-equal-children > * {
+	flex-grow: 1;
+}
+
+button.modal-close {
+	margin: 10px;
+}
+
+h3.modal-header {
+	margin: 13px;
+}

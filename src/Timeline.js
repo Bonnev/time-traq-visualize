@@ -1,5 +1,8 @@
-import { React, useEffect, useState, useRef } from 'react';
+import { React, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import PropTypes from 'prop-types';
+
+import ReactModal from 'react-modal-resizable-draggable';
+// import ReactModal from './popup/index.js';
 
 const moment = require('moment');
 const vis = require('vis-timeline/standalone/esm/vis-timeline-graph2d.min'); // minified
@@ -22,11 +25,14 @@ function ownRandomColorRGBA(opacity) {
 }
 
 function Timeline({data}) {
+	const [, updateState] = useState();
+	const forceUpdate = useCallback(() => updateState({}), []);
+
 	const timeline = useRef();
 	const markers = useRef([]);
 	const task = useRef('');
-	const autocompleteElement = useRef(null);
 	const backgroundsByTask = useRef({});
+	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(true);
 
 	const [allGroups, setAllGroups] = useState([]);
 
@@ -38,6 +44,7 @@ function Timeline({data}) {
 		var container = document.getElementById('visualization');
 
 		let unique = [];
+		backgroundsByTask.current = {};
 
 		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+']
 		let dataToAppend = [];
@@ -227,14 +234,20 @@ function Timeline({data}) {
 
 					const color = backgroundsByTask.current[task.current]?.color || ownRandomColorRGBA(0.4);
 					if (!backgroundsByTask.current[task.current]) {
-						backgroundsByTask.current[task.current] = {color};
+						backgroundsByTask.current[task.current] = {color, task: task.current, durations: [duration], totalDuration: duration};
 
 						const newOption = document.createElement('option');
 						newOption.value = task.current;
 
 						const datalist = document.getElementById('tasks');
 						datalist.appendChild(newOption);
+					} else {
+						backgroundsByTask.current[task.current].durations.push(duration);
+
+						const totalDuration = moment.duration(backgroundsByTask.current[task.current].totalDuration);
+						backgroundsByTask.current[task.current].totalDuration = totalDuration.add(duration);
 					}
+					forceUpdate();
 
 					items.add([{
 						id:'background' + (items.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
@@ -277,14 +290,39 @@ function Timeline({data}) {
 		task.current = event.target.value;
 	}
 
+	const getBackgroundStatistics = () => {
+		return Object.values(backgroundsByTask.current).map(background => {
+			const total = background.totalDuration;
+			return <>{background.task + `: ${total.hours()}h${total.minutes()}m${total.seconds()}s`}<br /></>;
+		});
+	};
+
 	return (<>
-		<button onClick={showAllGroups}>Show all groups</button>
-		<input type="text" list="tasks" name="task"
-			placeholder="Task" onChange={taskInputHandler} />
-		<datalist id="tasks">
-			{/* <option value="0dlcjdnsjkcandckjandjkc"></option> */}
+		<div className='flex-container-with-equal-children'>
+			<button onClick={showAllGroups}>Show all groups</button>
+			<button onClick={() => setStatisticsPopupOpen(true)}>Open statistics</button>
+		</div>
+		<input type='text' list='tasks' name='task'
+			placeholder='Task' onChange={taskInputHandler} />
+		<datalist id='tasks'>
+			{/* <option value='0dlcjdnsjkcandckjandjkc'></option> */}
 		</datalist>
 		<div id='visualization'></div>
+		<ReactModal
+			initWidth={800}
+			initHeight={400} disableKeystroke
+			onFocus={() =>{} /* left for reference e.g. console.log('Modal is clicked') */}
+			className={'my-modal-custom-class'}
+			onRequestClose={() => setStatisticsPopupOpen(false)}
+			isOpen={statisticsPopupOpen}>
+			<h3 className='modal-header'>Statistics</h3>
+			<div className='body'>
+				{getBackgroundStatistics()}
+			</div>
+			<button className='modal-close' onClick={() => setStatisticsPopupOpen(false)}>
+				Close modal
+			</button>
+		</ReactModal>
 	</>);
 }
 
