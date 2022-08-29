@@ -1,4 +1,4 @@
-import { React, useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { React, useEffect, useState, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 import ReactModal from 'react-modal-resizable-draggable';
@@ -32,7 +32,7 @@ function Timeline({data}) {
 	const markers = useRef([]);
 	const task = useRef('');
 	const backgroundsByTask = useRef({});
-	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(true);
+	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
 
 	const [allGroups, setAllGroups] = useState([]);
 
