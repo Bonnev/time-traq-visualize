@@ -1,4 +1,4 @@
-export function patchItemSet(util, timeline) {
+export default function patchItemSet(util, timeline) {
 	timeline.components.ItemSet.prototype._onMouseOver = function(event) {
 		var item = this.itemFromTarget(event);
 

@@ -16,6 +16,9 @@
 		},
 		"ecmaVersion": "latest"
 	},
+	"globals": {
+		"Neutralino": "readonly"
+	},
 	"plugins": [
 		"react"
 	],
