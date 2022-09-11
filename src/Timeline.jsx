@@ -22,7 +22,7 @@ function ownRandomColorRGBA(opacity) {
 	return `rgba(${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${opacity})`;
 }
 
-function Timeline({data}) {
+function Timeline({ data }) {
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
 
@@ -44,21 +44,21 @@ function Timeline({data}) {
 		let unique = [];
 		backgroundsByTask.current = {};
 
-		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+']
+		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
 		let dataToAppend = [];
 		data.forEach((datum) => {
 			const matchingGroupIndex = groupsToCopy.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 			if (matchingGroupIndex > -1) {
 				const matches = datum.title.match(new RegExp(groupsToCopy[matchingGroupIndex], 'g'));
 				if (matches && matches.length === 1) {
-					dataToAppend.push({...datum, process: matches[0],label: matches[0], extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})`});
+					dataToAppend.push({ ...datum, process: matches[0],label: matches[0], extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})` });
 				}
 			}
 		});
 		data = data.concat(dataToAppend);
 
-		const groupsToExtract = [' - Personal - ']
-		const extractNewNames = ['Personal']
+		const groupsToExtract = [' - Personal - '];
+		const extractNewNames = ['Personal'];
 		data.forEach((datum) => {
 			const matchingGroupIndex = groupsToExtract.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 			if (matchingGroupIndex > -1) {
@@ -78,7 +78,7 @@ function Timeline({data}) {
 			}
 		});
 
-		unique = unique.map(u => Object.assign(u, {color: ownRandomColor()}));
+		unique = unique.map(u => Object.assign(u, { color: ownRandomColor() }));
 
 		unique.sort((a,b) => {
 			if (a.extractedIndex && b.extractedIndex && b.extractedIndex - a.extractedIndex === 0) {
@@ -120,12 +120,12 @@ function Timeline({data}) {
 			style: `background-color: ${u.color}`
 		}));
 		groups.forEach(u => groupsMap.set(u.content, u));
-		groups.unshift({id: 'all', content: 'All' });
+		groups.unshift({ id: 'all', content: 'All' });
 
-		subgroups = subgroups.map(sub => Object.assign(sub, {style: `background-color: ${groupsMap.get(sub.process).color}`}));
+		subgroups = subgroups.map(sub => Object.assign(sub, { style: `background-color: ${groupsMap.get(sub.process).color}` }));
 
 		// var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
-		var dataset = data.map((u,ind) => ({id: ind, content: `${u.content} (${u.process})`, title: `${u.title} (${u.process})`, start: u.start, end: u.end, group: groupsMap.get(u.process).id, style: `background-color: ${groupsMap.get(u.process).color}`}));
+		var dataset = data.map((u,ind) => ({ id: ind, content: `${u.content} (${u.process})`, title: `${u.title} (${u.process})`, start: u.start, end: u.end, group: groupsMap.get(u.process).id, style: `background-color: ${groupsMap.get(u.process).color}` }));
 
 		let globalEnd;
 		const groupEnds = {};
@@ -161,10 +161,10 @@ function Timeline({data}) {
 			}
 		}*/
 
-		var subgroupDataset = data.map((u,ind) => ({id: ind+dataset[dataset.length-1].id+1, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content)}));
+		var subgroupDataset = data.map((u,ind) => ({ id: ind+dataset[dataset.length-1].id+1, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content) }));
 		dataset = dataset.concat(subgroupDataset);
 
-		var allDataset = data.map((u,id) => ({id: 'all'+id, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}`}));
+		var allDataset = data.map((u,id) => ({ id: 'all'+id, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}` }));
 		dataset = dataset.concat(allDataset);
 
 		var items = new DataSet(dataset.concat(endBackgrounds));
@@ -191,7 +191,7 @@ function Timeline({data}) {
 				hide.addEventListener('click', function () {
 					// nested groups can't be hidden if they are not expanded
 					// hide the top-level group first, then nested will show
-					allGroups.update({id: group.id, visible: false});
+					allGroups.update({ id: group.id, visible: false });
 					// then hide also the nested ones
 					if (group.nestedGroups && group.nestedGroups.length) {
 						setTimeout(() =>
@@ -232,7 +232,7 @@ function Timeline({data}) {
 
 					const color = backgroundsByTask.current[task.current]?.color || ownRandomColorRGBA(0.4);
 					if (!backgroundsByTask.current[task.current]) {
-						backgroundsByTask.current[task.current] = {color, task: task.current, durations: [duration], totalDuration: duration};
+						backgroundsByTask.current[task.current] = { color, task: task.current, durations: [duration], totalDuration: duration };
 
 						const newOption = document.createElement('option');
 						newOption.value = task.current;

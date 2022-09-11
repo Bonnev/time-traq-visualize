@@ -54,6 +54,12 @@
 		],
 		"no-console": [
 			"warn"
+		],
+		"object-curly-spacing": [
+			"warn", "always"
+		],
+		"array-bracket-spacing": [
+			"warn"
 		]
 	}
 }

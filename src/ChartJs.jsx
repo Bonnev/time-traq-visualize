@@ -25,7 +25,7 @@ const initialConfig = {
 	}
 };
 
-function ChartJs({data}) {
+function ChartJs({ data }) {
 	const [config] = useState(Object.assign({}, initialConfig));
 	const chart = useRef();
 
