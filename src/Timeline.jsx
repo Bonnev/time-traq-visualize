@@ -4,17 +4,15 @@ import PropTypes from 'prop-types';
 import ReactModal from 'react-modal-resizable-draggable';
 // import ReactModal from './popup/index.js';
 
-const moment = require('moment');
-const vis = require('vis-timeline/standalone/esm/vis-timeline-graph2d.min'); // minified
-// const vis = require('vis-timeline/standalone/esm/vis-timeline-graph2d'); // full source
+import * as moment from 'moment';
+import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
+// import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
+// import * as vis from 'vis-timeline';
 
-//const viсs = require('vis-timeline/dist/vis-timeline-graph2d.min');
-//const vis = require('vis-timeline');
+import { DataSet } from 'vis-data';
 
-const { patchItemSet } = require('./vis-timeline-background-tooltip-patch');
+import patchItemSet from './vis-timeline-background-tooltip-patch';
 patchItemSet(vis.util, vis.timeline);
-
-const {DataSet} = require('vis-data');
 
 function ownRandomColor() {
 	return `#${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}`;
