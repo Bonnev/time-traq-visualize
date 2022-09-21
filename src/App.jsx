@@ -6,7 +6,7 @@ import Timeline from './Timeline';
 
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
-function App() {
+const App = () => {
 	const [data, setData] = useState([]);
 	const [fileContents, setFileContents] = useState();
 	const [showChart, setShowChart] = useState('timeline');
@@ -68,9 +68,9 @@ function App() {
 			<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
 			<button onClick={()=>setShowChart('timeline')}>Timeline</button>
 		</div>
-		{showChart === 'chartjs' ? <ChartJs data={data}></ChartJs> : null}
-		{showChart === 'timeline' ? <Timeline data={data}></Timeline> : null}
+		{showChart === 'chartjs' ? <ChartJs data={data} /> : null}
+		{showChart === 'timeline' ? <Timeline data={data} /> : null}
 	</>);
-}
+};
 
 export default App;

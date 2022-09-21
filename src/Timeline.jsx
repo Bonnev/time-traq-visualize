@@ -22,7 +22,8 @@ function ownRandomColorRGBA(opacity) {
 	return `rgba(${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${opacity})`;
 }
 
-function Timeline({ data }) {
+const Timeline = ({ data }) => {
+	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
 
@@ -305,7 +306,7 @@ function Timeline({ data }) {
 		<datalist id='tasks'>
 			{/* <option value='0dlcjdnsjkcandckjandjkc'></option> */}
 		</datalist>
-		<div id='visualization'></div>
+		<div id='visualization' />
 		<ReactModal
 			initWidth={800}
 			initHeight={400} disableKeystroke
@@ -322,7 +323,7 @@ function Timeline({ data }) {
 			</button>
 		</ReactModal>
 	</>);
-}
+};
 
 Timeline.propTypes = {
 	data: PropTypes.arrayOf(PropTypes.shape({

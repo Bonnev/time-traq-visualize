@@ -1,29 +1,39 @@
 {
 	"extends": [
-		"nw-react-app",
 		"eslint:recommended",
-		"plugin:react/recommended"
+		"plugin:react/recommended",
+		"plugin:react-hooks/recommended",
+		"plugin:jsx-a11y/recommended"
 	],
 	"env": {
 		"browser": true,
-		"es2021": true,
-		"node": true
+		"es2021": true
 	},
-	"parser": "@typescript-eslint/parser",
 	"parserOptions": {
 		"ecmaFeatures": {
 			"jsx": true
 		},
-		"ecmaVersion": "latest"
+		"ecmaVersion": 2021,
+		"sourceType": "module"
 	},
 	"globals": {
 		"Neutralino": "readonly"
 	},
-	"plugins": [
-		"react"
-	],
+	"settings": {
+		"react": {
+			"version": "detect"
+		}
+	},
 	"rules": {
 		"indent": [
+			"warn",
+			"tab"
+		],
+		"react/jsx-indent": [
+			"warn",
+			"tab"
+		],
+		"react/jsx-indent-props": [
 			"warn",
 			"tab"
 		],
@@ -42,10 +52,7 @@
 		"no-trailing-spaces": [
 			"warn"
 		],
-		"no-use-before-define": "off",
-		"@typescript-eslint/no-use-before-define": [
-			"error"
-		],
+		"no-use-before-define": "error",
 		"no-unused-vars": [
 			"warn"
 		],
@@ -60,6 +67,57 @@
 		],
 		"array-bracket-spacing": [
 			"warn"
-		]
+		],
+		"react/button-has-type": "warn",
+		"react/default-props-match-prop-types": "error",
+		"react/destructuring-assignment": "warn",
+		"react/forbid-prop-types": "warn",
+		"react/function-component-definition": [
+			"warn", {
+				"namedComponents": "arrow-function",
+				"unnamedComponents": "arrow-function"
+			}
+		],
+		"react/hook-use-state": "error",
+		"react/iframe-missing-sandbox": "error",
+		"react/no-access-state-in-setstate": "error",
+		"react/no-adjacent-inline-elements": "warn",
+		"react/no-array-index-key": "error",
+		"react/no-arrow-function-lifecycle": "error",
+		"react/no-danger": "error",
+		"react/no-invalid-html-attribute": "warn",
+		"react/no-multi-comp": "error",
+		"react/no-namespace": "error",
+		"react/no-this-in-sfc": "error",
+		"react/no-typos": "error",
+		"react/no-unsafe": "error",
+		"react/no-unstable-nested-components": "error",
+		"react/no-unused-class-component-methods": "error",
+		"react/no-unused-prop-types": "warn",
+		"react/no-unused-state": "warn",
+		"react/no-will-update-set-state": "error",
+		"react/prefer-es6-class": "error",
+		"react/prefer-exact-props": "warn",
+		"react/prefer-read-only-props": "warn",
+		"react/require-default-props": "warn",
+		"react/self-closing-comp": "warn",
+		"react/static-property-placement": "warn",
+		"react/style-prop-object": "warn",
+		"react/void-dom-elements-no-children": "error",
+		"react/jsx-boolean-value": ["warn",  "never"],
+		"react/jsx-child-element-spacing": "warn",
+		"react/jsx-closing-bracket-location": ["warn", "after-props"],
+		"react/jsx-curly-brace-presence": ["warn", { "props": "never", "children": "never", "propElementValues": "never" }],
+		"react/jsx-equals-spacing": ["warn", "never"],
+		"react/jsx-filename-extension": ["error", { "allow": "as-needed" }],
+		"react/jsx-fragments": ["warn", "syntax"],
+		"react/jsx-no-bind": "warn",
+		"react/jsx-no-constructed-context-values": "warn",
+		"react/jsx-no-leaked-render": "warn",
+		"react/jsx-no-script-url": "warn",
+		"react/jsx-no-useless-fragment": "warn",
+		"react/jsx-pascal-case": "warn",
+		"react/jsx-props-no-multi-spaces": "warn",
+		"react/jsx-tag-spacing": "warn"
 	}
 }

@@ -1,7 +1,7 @@
 import { React, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
-function FileDropper({ setFileContents }) {
+const FileDropper = ({ setFileContents }) => {
 	const addedListeners = useRef(false);
 	const draggingFile = useRef(false);
 
@@ -85,7 +85,7 @@ function FileDropper({ setFileContents }) {
 	return <div id='drop-overlay' style={{ opacity: 0 }} >
 		{/* <div id='drop-overlay-content'>will be populated with the file name</div> */}
 	</div>;
-}
+};
 
 FileDropper.propTypes = {
 	setFileContents: PropTypes.func.isRequired
