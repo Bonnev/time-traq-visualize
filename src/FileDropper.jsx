@@ -1,7 +1,7 @@
 import { React, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
-function FileDropper({setFile}) {
+const FileDropper = ({ setFileContents }) => {
 	const addedListeners = useRef(false);
 	const draggingFile = useRef(false);
 
@@ -33,8 +33,8 @@ function FileDropper({setFile}) {
 			let overlay = document.getElementById('drop-overlay');
 			overlay.style.opacity = 1;
 
-			let overlayContent = document.getElementById('drop-overlay-content');
-			overlayContent.innerText = event.dataTransfer.files[0].name;
+			// let overlayContent = document.getElementById('drop-overlay-content');
+			// overlayContent.innerText = event.dataTransfer.files[0].name;
 			draggingFile.current = true;
 
 		}, true);
@@ -42,9 +42,9 @@ function FileDropper({setFile}) {
 		root.addEventListener('dragover', (event) => {
 			event.preventDefault();
 
-			let overlayContent = document.getElementById('drop-overlay-content');
-			overlayContent.style.top = (event.clientY-40) + 'px';
-			overlayContent.style.left = (event.clientX+60) + 'px';
+			// let overlayContent = document.getElementById('drop-overlay-content');
+			// overlayContent.style.top = (event.clientY-40) + 'px';
+			// overlayContent.style.left = (event.clientX+60) + 'px';
 
 			return false;
 		});
@@ -70,21 +70,25 @@ function FileDropper({setFile}) {
 			let overlay = document.getElementById('drop-overlay');
 			overlay.style.opacity = 0;
 
-			setFile(event.dataTransfer.files[0].path);
-			document.title = `TimeTraq Visualize - ${event.dataTransfer.files[0].name}`;
+			event.dataTransfer.items[0]
+				.getAsFile()
+				.text()
+				.then(setFileContents);
+
+			Neutralino.window.setTitle(`TimeTraq Visualize - ${event.dataTransfer.files[0].name}`);
 			draggingFile.current = false;
-		}, {capture: true});
+		}, { capture: true });
 
 		addedListeners.current = true;
 	}, []);
 
-	return <div id='drop-overlay' style={{opacity: 0}} >
-		<div id='drop-overlay-content'>{/* will be populated with the file name */}</div>
+	return <div id='drop-overlay' style={{ opacity: 0 }} >
+		{/* <div id='drop-overlay-content'>will be populated with the file name</div> */}
 	</div>;
-}
+};
 
 FileDropper.propTypes = {
-	setFile: PropTypes.func.isRequired
+	setFileContents: PropTypes.func.isRequired
 };
 
 export default FileDropper;

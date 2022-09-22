@@ -4,19 +4,25 @@ import ChartJs from './ChartJs';
 import FileDropper from './FileDropper';
 import Timeline from './Timeline';
 
-function App() {
+const DEFAULT_FILE_PATH = 'C:\\input.txt';
+
+const App = () => {
 	const [data, setData] = useState([]);
-	const [file, setFile] = useState();
+	const [fileContents, setFileContents] = useState();
 	const [showChart, setShowChart] = useState('timeline');
 
 	useEffect(() => {
-		if (!file) {
+		if (!fileContents) {
+			Neutralino.filesystem.getStats(DEFAULT_FILE_PATH)
+				.then(() => Neutralino.filesystem.readFile(DEFAULT_FILE_PATH))
+				.then(setFileContents)
+				.then(() => Neutralino.window.setTitle(`TimeTraq Visualize - ${DEFAULT_FILE_PATH.substring(DEFAULT_FILE_PATH.lastIndexOf('\\')+1)}`))
+				.catch(() => console.warn('Default file not found'));
+
 			return;
 		}
-		const filePath = file || 'C:\\input.txt';
-		const fs = require('fs');
-		// fs.writeFileSync("C:\\input.txt", "marti karti");
-		const contents = fs.readFileSync(filePath).toString();
+
+		const contents = fileContents;// (async () => await Neutralino.readFile(filePath))();
 		const timelineDate = '2022-04-07';
 		// const nextDate = '2022-04-08';
 
@@ -54,17 +60,17 @@ function App() {
 		});
 
 		setData(data);
-	}, [file]);
+	}, [fileContents]);
 
 	return (<>
-		<FileDropper setFile={setFile} />
+		<FileDropper setFileContents={setFileContents} />
 		<div className='flex-container-with-equal-children'>
 			<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
 			<button onClick={()=>setShowChart('timeline')}>Timeline</button>
 		</div>
-		{showChart === 'chartjs' ? <ChartJs data={data}></ChartJs> : null}
-		{showChart === 'timeline' ? <Timeline data={data}></Timeline> : null}
+		{showChart === 'chartjs' ? <ChartJs data={data} /> : null}
+		{showChart === 'timeline' ? <Timeline data={data} /> : null}
 	</>);
-}
+};
 
 export default App;

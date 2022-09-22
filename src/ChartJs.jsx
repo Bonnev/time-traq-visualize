@@ -25,8 +25,8 @@ const initialConfig = {
 	}
 };
 
-function ChartJs({data}) {
-	const [config] = useState(Object.assign({}, initialConfig));
+const ChartJs = ({ data }) => {
+	const [config, setConfig] = useState(Object.assign({}, initialConfig));
 	const chart = useRef();
 
 	useEffect(() => {
@@ -68,7 +68,7 @@ function ChartJs({data}) {
 	}, [config, data]);
 
 	return <canvas id="myChart" />;
-}
+};
 
 ChartJs.propTypes = {
 	data: PropTypes.arrayOf(PropTypes.shape({
