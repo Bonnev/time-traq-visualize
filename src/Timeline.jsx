@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import ReactModal from 'react-modal-resizable-draggable';
 // import ReactModal from './popup/index.js';
 
-import * as moment from 'moment';
+import moment from 'moment';
 import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
 // import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
