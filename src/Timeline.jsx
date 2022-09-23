@@ -11,6 +11,9 @@ import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // 
 
 import { DataSet } from 'vis-data';
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import patchItemSet from './vis-timeline-background-tooltip-patch';
 patchItemSet(vis.util, vis.timeline);
 
@@ -300,12 +303,22 @@ const Timeline = ({ data }) => {
 		<div className='flex-container-with-equal-children'>
 			<button onClick={showAllGroups}>Show all groups</button>
 			<button onClick={() => setStatisticsPopupOpen(true)}>Open statistics</button>
+			<button onClick={() => toast.success('Works!')}>Test toaster!</button>
 		</div>
 		<input type='text' list='tasks' name='task'
 			placeholder='Task' onChange={taskInputHandler} />
 		<datalist id='tasks'>
 			{/* <option value='0dlcjdnsjkcandckjandjkc'></option> */}
 		</datalist>
+		<ToastContainer position="bottom-left"
+			autoClose={3000}
+			hideProgressBar={false}
+			newestOnTop={false}
+			closeOnClick
+			rtl={false}
+			pauseOnFocusLoss
+			draggable
+			pauseOnHover />
 		<div id='visualization' />
 		<ReactModal
 			initWidth={800}
