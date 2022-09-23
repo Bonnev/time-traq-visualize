@@ -5,16 +5,18 @@ import ReactModal from 'react-modal-resizable-draggable';
 // import ReactModal from './popup/index.js';
 
 import moment from 'moment';
+
 import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
 // import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
+import '../styles/vis-timeline-graph2d.min.css';
 
 import { DataSet } from 'vis-data';
 
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import '../styles/ReactToastify.css';
 
-import patchItemSet from './vis-timeline-background-tooltip-patch';
+import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 patchItemSet(vis.util, vis.timeline);
 
 function ownRandomColor() {

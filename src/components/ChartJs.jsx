@@ -1,6 +1,6 @@
 import { React, useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Chart } from './chart-wrapper';
+import { Chart } from '../utils/chart-wrapper.js';
 
 const initialConfig = {
 	type: 'bar',

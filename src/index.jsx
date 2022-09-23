@@ -1,8 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-// import reportWebVitals from './reportWebVitals';
-import App from './App';
+import App from './components/App.jsx';
+
+// import reportWebVitals from './utils/reportWebVitals';
+
+import './styles/index.css';
 
 Neutralino.init();
 

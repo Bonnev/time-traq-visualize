@@ -1,8 +1,8 @@
 import { React, useEffect, useState } from 'react';
 
-import ChartJs from './ChartJs';
-import FileDropper from './FileDropper';
-import Timeline from './Timeline';
+import ChartJs from './ChartJs.jsx';
+import FileDropper from './FileDropper.jsx';
+import Timeline from './Timeline.jsx';
 
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
