@@ -9,12 +9,11 @@ import moment from 'moment';
 import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
 // import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
-import '../styles/vis-timeline-graph2d.min.css';
 
 import { DataSet } from 'vis-data';
 
-import { ToastContainer, toast } from 'react-toastify';
-import '../styles/ReactToastify.css';
+import { toast } from 'react-toastify';
+
 
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 patchItemSet(vis.util, vis.timeline);
@@ -312,15 +311,6 @@ const Timeline = ({ data }) => {
 		<datalist id='tasks'>
 			{/* <option value='0dlcjdnsjkcandckjandjkc'></option> */}
 		</datalist>
-		<ToastContainer position="bottom-left"
-			autoClose={3000}
-			hideProgressBar={false}
-			newestOnTop={false}
-			closeOnClick
-			rtl={false}
-			pauseOnFocusLoss
-			draggable
-			pauseOnHover />
 		<div id='visualization' />
 		<ReactModal
 			initWidth={800}

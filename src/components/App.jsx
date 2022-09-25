@@ -4,6 +4,9 @@ import ChartJs from './ChartJs.jsx';
 import FileDropper from './FileDropper.jsx';
 import Timeline from './Timeline.jsx';
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.min.css';
+
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
 const App = () => {
@@ -17,7 +20,7 @@ const App = () => {
 				.then(() => Neutralino.filesystem.readFile(DEFAULT_FILE_PATH))
 				.then(setFileContents)
 				.then(() => Neutralino.window.setTitle(`TimeTraq Visualize - ${DEFAULT_FILE_PATH.substring(DEFAULT_FILE_PATH.lastIndexOf('\\')+1)}`))
-				.catch(() => console.warn('Default file not found'));
+				.catch(() => toast.error(`Default file "${DEFAULT_FILE_PATH}" not found`, { autoClose: 5000 }));
 
 			return;
 		}
@@ -68,6 +71,12 @@ const App = () => {
 			<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
 			<button onClick={()=>setShowChart('timeline')}>Timeline</button>
 		</div>
+		<ToastContainer position="bottom-left"
+			autoClose={false}
+			closeOnClick
+			pauseOnFocusLoss
+			draggable
+			pauseOnHover />
 		{showChart === 'chartjs' ? <ChartJs data={data} /> : null}
 		{showChart === 'timeline' ? <Timeline data={data} /> : null}
 	</>);
