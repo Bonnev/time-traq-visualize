@@ -36,7 +36,7 @@ const ChartJs = ({ data }) => {
 
 		data.forEach((datum) => {
 			if (!unique.map(u => u.label).includes(datum.label)) {
-				unique.push(datum);
+				unique.push({ ...datum });
 			} else {
 				unique.find(u => u.label === datum.label).number += datum.number;
 			}

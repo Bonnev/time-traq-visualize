@@ -1,32 +1,21 @@
-import { React, useEffect, useState, useCallback, useRef } from 'react';
+// packages
+import { React, Fragment, useEffect, useState, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
-
 import ReactModal from 'react-modal-resizable-draggable';
-// import ReactModal from './popup/index.js';
-
 import moment from 'moment';
-
-import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
-// import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
+import { DataSet } from 'vis-data';
+import { toast } from 'react-toastify';
+// import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
+import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
 
-import { DataSet } from 'vis-data';
-
-import { toast } from 'react-toastify';
-
-
+// utils
+import { randomColor, randomColorRGBA } from '../utils/colorUtils.js';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
+
 patchItemSet(vis.util, vis.timeline);
 
-function ownRandomColor() {
-	return `#${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}${(parseInt(Math.random() * 128)+128).toString(16)}`;
-}
-
-function ownRandomColorRGBA(opacity) {
-	return `rgba(${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${parseInt(Math.random() * 128)+128},${opacity})`;
-}
-
-const Timeline = ({ data }) => {
+const Timeline = ({ data: dataProp }) => {
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
@@ -43,6 +32,8 @@ const Timeline = ({ data }) => {
 	const nextDate = '2022-04-08';
 
 	useEffect(() => {
+		if (!dataProp.length) return;
+
 		// DOM element where the Timeline will be attached
 		var container = document.getElementById('visualization');
 
@@ -51,7 +42,7 @@ const Timeline = ({ data }) => {
 
 		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
 		let dataToAppend = [];
-		data.forEach((datum) => {
+		dataProp.forEach((datum) => {
 			const matchingGroupIndex = groupsToCopy.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 			if (matchingGroupIndex > -1) {
 				const matches = datum.title.match(new RegExp(groupsToCopy[matchingGroupIndex], 'g'));
@@ -60,7 +51,7 @@ const Timeline = ({ data }) => {
 				}
 			}
 		});
-		data = data.concat(dataToAppend);
+		const data = dataProp.concat(dataToAppend);
 
 		const groupsToExtract = [' - Personal - '];
 		const extractNewNames = ['Personal'];
@@ -83,7 +74,7 @@ const Timeline = ({ data }) => {
 			}
 		});
 
-		unique = unique.map(u => Object.assign(u, { color: ownRandomColor() }));
+		unique = unique.map(u => Object.assign(u, { color: randomColor() }));
 
 		unique.sort((a,b) => {
 			if (a.extractedIndex && b.extractedIndex && b.extractedIndex - a.extractedIndex === 0) {
@@ -106,7 +97,7 @@ const Timeline = ({ data }) => {
 			content: u.content,
 			treeLevel: 2,
 			process: u.process,
-			style: `background-color: ${ownRandomColor()}`
+			style: `background-color: ${randomColor()}`
 		}));
 
 		// remove duplicates
@@ -172,7 +163,8 @@ const Timeline = ({ data }) => {
 		var allDataset = data.map((u,id) => ({ id: 'all'+id, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}` }));
 		dataset = dataset.concat(allDataset);
 
-		var items = new DataSet(dataset.concat(endBackgrounds));
+		dataset = dataset.concat(endBackgrounds);
+		var items = new DataSet(dataset);
 
 		const allGroups = new DataSet(groups.concat(subgroups));
 
@@ -212,6 +204,7 @@ const Timeline = ({ data }) => {
 		timeline.current && timeline.current.destroy();
 
 		const timelineLocal = new vis.Timeline(container, items, options);
+
 		timelineLocal.setGroups(allGroups);
 
 		timelineLocal.on('doubleClick', function (properties) {
@@ -227,15 +220,17 @@ const Timeline = ({ data }) => {
 					+ time.getMinutes().toFixed(0).padStart(2, '0') + ':'
 					+ time.getSeconds().toFixed(0).padStart(2, '0');
 				var markerText = text || undefined;
+
 				timeline.current.addCustomTime(eventProps.time, id);
-				timeline.current.setCustomTimeMarker(markerText, id);
+				timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
+				timeline.current.setCustomTimeMarker(markerText, id, false);
 
 				if (markers.current.length % 2 === 1) {
 					const start = markers.current[markers.current.length-1];
 					const end = text;
 					const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
 
-					const color = backgroundsByTask.current[task.current]?.color || ownRandomColorRGBA(0.4);
+					const color = backgroundsByTask.current[task.current]?.color || randomColorRGBA(0.4);
 					if (!backgroundsByTask.current[task.current]) {
 						backgroundsByTask.current[task.current] = { color, task: task.current, durations: [duration], totalDuration: duration };
 
@@ -274,8 +269,7 @@ const Timeline = ({ data }) => {
 		};
 
 		timeline.current = timelineLocal;
-		setAllGroups(allGroups);
-	}, [data]);
+	}, [dataProp]);
 
 	function showAllGroups() {
 		const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
@@ -296,7 +290,7 @@ const Timeline = ({ data }) => {
 	const getBackgroundStatistics = () => {
 		return Object.values(backgroundsByTask.current).map(background => {
 			const total = background.totalDuration;
-			return <>{background.task + `: ${total.hours()}h${total.minutes()}m${total.seconds()}s`}<br /></>;
+			return <Fragment key={background.task}>{background.task + `: ${total.hours()}h${total.minutes()}m${total.seconds()}s`}<br /></Fragment>;
 		});
 	};
 

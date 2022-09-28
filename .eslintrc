@@ -68,6 +68,7 @@
 		"array-bracket-spacing": [
 			"warn"
 		],
+		"space-infix-ops": "warn",
 		"react/button-has-type": "warn",
 		"react/default-props-match-prop-types": "error",
 		"react/destructuring-assignment": "warn",

@@ -3,6 +3,7 @@ import { React, useEffect, useState } from 'react';
 import ChartJs from './ChartJs.jsx';
 import FileDropper from './FileDropper.jsx';
 import Timeline from './Timeline.jsx';
+import { TimeAndDate } from '../utils/dateTimeUtils.ts';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
@@ -25,31 +26,27 @@ const App = () => {
 			return;
 		}
 
-		const contents = fileContents;// (async () => await Neutralino.readFile(filePath))();
 		const timelineDate = '2022-04-07';
 		// const nextDate = '2022-04-08';
 
-		const lines = contents.split('\n');
+		const lines = fileContents.split('\n');
 
-		const matrix = lines.filter(line => line.length).map(line => line.split('\t'));
+		const matrix = lines
+			.filter(line => line.length > 0) // only non-empty lines
+			.map(line => line.split('\t')); // split by tab
 
 		let data = [];
 
 		matrix.forEach((current, index) => {
-			if (index-1 < 0) return;
+			if (index - 1 < 0) return;
 
+			// C:\Program Files\...\msedge.exe	Rewriting Git History... - YouTube and 30 more pages - Personal - Microsoft Edge	08:50:06	08:53:47
 			const prevRow = matrix[index-1];
+			// const current = matrix[index]; // automatic by first parameter
 
-			const prevRowTime = prevRow[3];
-			const prevRowParts = prevRowTime.split(':');
-
-			const currentRowTime = current[3];
-			const currentRowParts = currentRowTime.split(':');
-
-			const prevRowSeconds = +prevRowParts[0] * 3600 + +prevRowParts[1] * 60 + +prevRowParts[2];
-			const currentRowSeconds = +currentRowParts[0] * 3600 + +currentRowParts[1] * 60 + +currentRowParts[2];
-
-			const durationSeconds = currentRowSeconds - prevRowSeconds;
+			const prevRowTime = TimeAndDate.parse(prevRow[3], 'HH:mm:ss');
+			const currentRowTime = TimeAndDate.parse(current[3], 'HH:mm:ss');
+			const durationSeconds = currentRowTime.subtract(prevRowTime).getTotalSeconds();
 
 			data.push({
 				label: current[0],
@@ -57,13 +54,15 @@ const App = () => {
 				content: current[1].replace(/and \d+ more pages/, '').substring(0, 50),
 				title: current[1].replace(/and \d+ more pages/, ''),
 				number: durationSeconds,
-				start: timelineDate + ' ' + prevRowTime,
-				end: timelineDate + ' ' + currentRowTime
+				start: timelineDate + ' ' + prevRow[3],
+				end: timelineDate + ' ' + current[3]
 			});
 		});
 
 		setData(data);
 	}, [fileContents]);
+
+	let dataCopy = data.map(datum => ({ ...datum })); // copy of data
 
 	return (<>
 		<FileDropper setFileContents={setFileContents} />
@@ -77,8 +76,8 @@ const App = () => {
 			pauseOnFocusLoss
 			draggable
 			pauseOnHover />
-		{showChart === 'chartjs' ? <ChartJs data={data} /> : null}
-		{showChart === 'timeline' ? <Timeline data={data} /> : null}
+		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
+		{showChart === 'timeline' ? <Timeline data={dataCopy} /> : null}
 	</>);
 };
 
