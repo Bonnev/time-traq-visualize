@@ -16,7 +16,8 @@
 	},
 	"nativeAllowList": [
 		"filesystem.*",
-		"window.setTitle"
+		"window.setTitle",
+		"storage.*"
 	],
 	"globalVariables": {
 		"TEST1": "Hello"

@@ -15,7 +15,9 @@ import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 
 patchItemSet(vis.util, vis.timeline);
 
-const Timeline = ({ data: dataProp }) => {
+const NEUTRALINO_STORAGE_KEY_PATTERN = /^[a-zA-Z-_0-9]{1,50}$/;
+
+const Timeline = ({ data: dataProp, fileName }) => {
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
@@ -30,6 +32,18 @@ const Timeline = ({ data: dataProp }) => {
 
 	const timelineDate = '2022-04-07';
 	const nextDate = '2022-04-08';
+
+	useEffect(() => {
+		if (!fileName) return;
+
+		let key = fileName
+			.substring(0, fileName.lastIndexOf('.'))
+			.replaceAll('.', '_');
+
+		if (!key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
+			toast.error(`Key ${key} doesn't match the storage pattern '${NEUTRALINO_STORAGE_KEY_PATTERN}' 😧`);
+		}
+	}, [fileName]);
 
 	useEffect(() => {
 		if (!dataProp.length) return;
@@ -334,6 +348,7 @@ Timeline.propTypes = {
 		start: PropTypes.string,
 		end: PropTypes.string,
 	})).isRequired,
+	fileName: PropTypes.string
 };
 
 export default Timeline;

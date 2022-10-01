@@ -1,7 +1,7 @@
 import { React, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
-const FileDropper = ({ setFileContents }) => {
+const FileDropper = ({ fileDroppedHandler }) => {
 	const addedListeners = useRef(false);
 	const draggingFile = useRef(false);
 
@@ -70,17 +70,19 @@ const FileDropper = ({ setFileContents }) => {
 			let overlay = document.getElementById('drop-overlay');
 			overlay.style.opacity = 0;
 
+			const fileName = event.dataTransfer.files[0].name;
+
 			event.dataTransfer.items[0]
 				.getAsFile()
 				.text()
-				.then(setFileContents);
+				.then((content) => fileDroppedHandler(content, fileName));
 
-			Neutralino.window.setTitle(`TimeTraq Visualize - ${event.dataTransfer.files[0].name}`);
+			Neutralino.window.setTitle(`TimeTraq Visualize - ${fileName}`);
 			draggingFile.current = false;
 		}, { capture: true });
 
 		addedListeners.current = true;
-	}, []);
+	}, [fileDroppedHandler]);
 
 	return <div id='drop-overlay' style={{ opacity: 0 }} >
 		{/* <div id='drop-overlay-content'>will be populated with the file name</div> */}
@@ -88,7 +90,7 @@ const FileDropper = ({ setFileContents }) => {
 };
 
 FileDropper.propTypes = {
-	setFileContents: PropTypes.func.isRequired
+	fileDroppedHandler: PropTypes.func.isRequired
 };
 
 export default FileDropper;
