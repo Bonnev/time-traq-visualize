@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export default function (state: any) {
+export default function usePrevValue(state: any) {
 	// The ref object is nothing but a generic container that whose current property is mutable and can hold any value.
 	const ref = useRef<any>();
 	

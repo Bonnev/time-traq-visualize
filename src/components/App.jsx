@@ -11,7 +11,7 @@ import 'react-toastify/dist/ReactToastify.min.css';
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
 const App = () => {
-	const [file, setFile] = useState({ data:[] });
+	const [fileData, setFileData] = useState({ data:[] });
 	const [showChart, setShowChart] = useState('timeline');
 
 	const fileDroppedHandler = useCallback((fileContents, fileName) => {
@@ -35,7 +35,7 @@ const App = () => {
 
 			const prevRowTime = TimeAndDate.parse(prevRow[3], 'HH:mm:ss');
 			const currentRowTime = TimeAndDate.parse(current[3], 'HH:mm:ss');
-			const durationSeconds = currentRowTime.subtract(prevRowTime).getTotalSeconds();
+			const durationSeconds = currentRowTime.subtract(prevRowTime).totalSeconds;
 
 			data.push({
 				label: current[0],
@@ -48,8 +48,8 @@ const App = () => {
 			});
 		});
 
-		setFile({ data, fileName });
-	}, [setFile]);
+		setFileData({ data, fileName });
+	}, [setFileData]);
 
 	useEffect(() => {
 		Neutralino.filesystem.getStats(DEFAULT_FILE_PATH)
@@ -60,7 +60,8 @@ const App = () => {
 			.catch(() => toast.error(`Default file "${DEFAULT_FILE_PATH}" not found`, { autoClose: 5000 }));
 	}, [fileDroppedHandler]);
 
-	let dataCopy = file.data.map(datum => ({ ...datum })); // copy of data
+	const dataCopy = fileData.data.map(datum => ({ ...datum })); // copy of data
+	const fileDataCopy = { fileName: fileData.fileName, data: dataCopy };
 
 	return (<>
 		<FileDropper fileDroppedHandler={fileDroppedHandler} />
@@ -75,7 +76,7 @@ const App = () => {
 			draggable
 			pauseOnHover />
 		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
-		{showChart === 'timeline' ? <Timeline data={dataCopy} fileName={file.fileName} /> : null}
+		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} /> : null}
 	</>);
 };
 

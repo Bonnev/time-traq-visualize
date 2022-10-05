@@ -12,41 +12,74 @@ import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full
 // utils
 import { randomColor, randomColorRGBA } from '../utils/colorUtils.js';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
+import usePrevValue from '../utils/usePrevValue.ts';
+import FileSettings, { TaskInfo } from '../utils/FileSettings.ts';
+import { TimeAndDate } from '../utils/dateTimeUtils.ts';
 
 patchItemSet(vis.util, vis.timeline);
 
-const NEUTRALINO_STORAGE_KEY_PATTERN = /^[a-zA-Z-_0-9]{1,50}$/;
-
-const Timeline = ({ data: dataProp, fileName }) => {
+const Timeline = ({ fileData, fileData: { data: dataProp, fileName } }) => {
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
 
+	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
+	const [allGroups, setAllGroups] = useState([]);
+
 	const timeline = useRef();
 	const markers = useRef([]);
 	const task = useRef('');
+	const items = useRef([]);
 	const backgroundsByTask = useRef({});
-	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
+	const fileSettings = useRef(new FileSettings());
 
-	const [allGroups, setAllGroups] = useState([]);
+	const prevFileName = usePrevValue(fileName);
 
 	const timelineDate = '2022-04-07';
 	const nextDate = '2022-04-08';
 
 	useEffect(() => {
-		if (!fileName) return;
-
-		let key = fileName
-			.substring(0, fileName.lastIndexOf('.'))
-			.replaceAll('.', '_');
-
-		if (!key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
-			toast.error(`Key ${key} doesn't match the storage pattern '${NEUTRALINO_STORAGE_KEY_PATTERN}' 😧`);
-		}
-	}, [fileName]);
-
-	useEffect(() => {
 		if (!dataProp.length) return;
+
+		// if fileName has changed
+		if (prevFileName !== fileName) {
+			//fileSettings.current = new FileSettings(fileName);
+			FileSettings.newFile(fileName)
+				.then(newSettings => {
+					fileSettings.current = newSettings;
+
+					fileSettings.current.allTaskNames.forEach((taskName, index) => {
+						var id = index;
+						const currentTask = fileSettings.current.getTask(taskName);
+
+						// const time = eventProps.time;
+						// const text = time.getHours().toFixed(0).padStart(2, '0') + ':'
+						// 	+ time.getMinutes().toFixed(0).padStart(2, '0') + ':'
+						// 	+ time.getSeconds().toFixed(0).padStart(2, '0');
+
+						currentTask.pinnedDurations.map(pinnedDuration => {
+
+							const start = pinnedDuration.startDate.format('HH:mm:ss');
+							const endTime = pinnedDuration.startDate.add(pinnedDuration);
+							const end = endTime.format('HH:mm:ss');
+
+							const color = currentTask?.color || randomColorRGBA(0.4);
+
+							forceUpdate();
+
+							items.current.add([{
+								id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
+								content: '',
+								title: `(${taskName}) ${start} -> ${end} (${pinnedDuration.toString()})`,
+								start: timelineDate + ' ' + start,
+								end: timelineDate + ' ' + end,
+								style: `background-color: ${color}`,
+								type: 'background',
+							}]);
+						});
+					});
+				})
+		}
 
 		// DOM element where the Timeline will be attached
 		var container = document.getElementById('visualization');
@@ -178,7 +211,7 @@ const Timeline = ({ data: dataProp, fileName }) => {
 		dataset = dataset.concat(allDataset);
 
 		dataset = dataset.concat(endBackgrounds);
-		var items = new DataSet(dataset);
+		items.current = new DataSet(dataset);
 
 		const allGroups = new DataSet(groups.concat(subgroups));
 
@@ -217,7 +250,7 @@ const Timeline = ({ data: dataProp, fileName }) => {
 
 		timeline.current && timeline.current.destroy();
 
-		const timelineLocal = new vis.Timeline(container, items, options);
+		const timelineLocal = new vis.Timeline(container, items.current, options);
 
 		timelineLocal.setGroups(allGroups);
 
@@ -242,29 +275,27 @@ const Timeline = ({ data: dataProp, fileName }) => {
 				if (markers.current.length % 2 === 1) {
 					const start = markers.current[markers.current.length-1];
 					const end = text;
-					const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
+					// const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
+					const startDate = TimeAndDate.parse(start, 'HH:mm:ss');
+					const endDate = TimeAndDate.parse(end, 'HH:mm:ss');
+					const duration = endDate.subtract(startDate);
+					const durationWithTime = duration.withStartTime(startDate);
 
-					const color = backgroundsByTask.current[task.current]?.color || randomColorRGBA(0.4);
-					if (!backgroundsByTask.current[task.current]) {
-						backgroundsByTask.current[task.current] = { color, task: task.current, durations: [duration], totalDuration: duration };
+					const currentFileTask = fileSettings.current.getTask(task.current);
+					const color = currentFileTask?.color || randomColorRGBA(0.4);
 
-						const newOption = document.createElement('option');
-						newOption.value = task.current;
-
-						const datalist = document.getElementById('tasks');
-						datalist.appendChild(newOption);
+					if (!currentFileTask) {
+						fileSettings.current.setTask(task.current, color, durationWithTime);
 					} else {
-						backgroundsByTask.current[task.current].durations.push(duration);
-
-						const totalDuration = moment.duration(backgroundsByTask.current[task.current].totalDuration);
-						backgroundsByTask.current[task.current].totalDuration = totalDuration.add(duration);
+						currentFileTask.addPinnedDuration(durationWithTime);
+						fileSettings.current.commit();
 					}
 					forceUpdate();
 
-					items.add([{
-						id:'background' + (items.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
+					items.current.add([{
+						id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
 						content: '',
-						title: `(${task.current}) ${start} -> ${end} (${duration.hours()}h${duration.minutes()}m${duration.seconds()}s)`,
+						title: `(${task.current}) ${start} -> ${end} (${duration.toString()})`,
 						start: timelineDate + ' ' + start,
 						end: timelineDate + ' ' + end,
 						style: `background-color: ${color}`,
@@ -283,7 +314,7 @@ const Timeline = ({ data: dataProp, fileName }) => {
 		};
 
 		timeline.current = timelineLocal;
-	}, [dataProp]);
+	}, [fileData]);
 
 	function showAllGroups() {
 		const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
@@ -302,9 +333,9 @@ const Timeline = ({ data: dataProp, fileName }) => {
 	}
 
 	const getBackgroundStatistics = () => {
-		return Object.values(backgroundsByTask.current).map(background => {
-			const total = background.totalDuration;
-			return <Fragment key={background.task}>{background.task + `: ${total.hours()}h${total.minutes()}m${total.seconds()}s`}<br /></Fragment>;
+		return fileSettings.current.allTaskNames.map(taskName => {
+			const currentTask = fileSettings.current.getTask(taskName);
+			return <Fragment key={currentTask.taskName}>{currentTask.taskName + `: ${currentTask.totalDuration.toString()}`}<br /></Fragment>;
 		});
 	};
 
@@ -317,7 +348,9 @@ const Timeline = ({ data: dataProp, fileName }) => {
 		<input type='text' list='tasks' name='task'
 			placeholder='Task' onChange={taskInputHandler} />
 		<datalist id='tasks'>
-			{/* <option value='0dlcjdnsjkcandckjandjkc'></option> */}
+			{fileSettings.current.allTaskNames.map(taskName =>
+				<option key={taskName} value={taskName} />
+			)}
 		</datalist>
 		<div id='visualization' />
 		<ReactModal
@@ -339,16 +372,18 @@ const Timeline = ({ data: dataProp, fileName }) => {
 };
 
 Timeline.propTypes = {
-	data: PropTypes.arrayOf(PropTypes.shape({
-		label: PropTypes.string,
-		process: PropTypes.string,
-		content: PropTypes.string,
-		title: PropTypes.string,
-		number: PropTypes.number,
-		start: PropTypes.string,
-		end: PropTypes.string,
-	})).isRequired,
-	fileName: PropTypes.string
+	fileData: PropTypes.shape({
+		data: PropTypes.arrayOf(PropTypes.shape({
+			label: PropTypes.string,
+			process: PropTypes.string,
+			content: PropTypes.string,
+			title: PropTypes.string,
+			number: PropTypes.number,
+			start: PropTypes.string,
+			end: PropTypes.string,
+		})),
+		fileName: PropTypes.string
+	}).isRequired
 };
 
 export default Timeline;
