@@ -151,7 +151,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 							items.current.add([{
 								id: id,
 								content: '',
-								title: `(${currentTask.taskName}) ${start} -> ${end} (${pinnedDuration.toString()})`,
+								title: `(${currentTask.taskName}) ${start} -> ${end} (${pinnedDuration.toPrettyString()})`,
 								start: timelineDate + ' ' + start,
 								end: timelineDate + ' ' + end,
 								style: `background-color: ${color}`,
@@ -429,7 +429,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				items.current.add([{
 					id: id,
 					content: '',
-					title: `(${task.current}) ${start} -> ${end} (${duration.toString()})`,
+					title: `(${task.current}) ${start} -> ${end} (${duration.toPrettyString()})`,
 					start: timelineDate + ' ' + start,
 					end: timelineDate + ' ' + end,
 					style: `background-color: ${color}`,
@@ -534,7 +534,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	const getBackgroundStatistics = () => {
 		return fileSettings.current.allTaskNames.map(taskName => {
 			const currentTask = fileSettings.current.getTask(taskName);
-			return <Fragment key={currentTask.taskName}>{currentTask.taskName + `: ${currentTask.totalDuration.toString()}`}<br /></Fragment>;
+			return <Fragment key={currentTask.taskName}>{currentTask.taskName + `: ${currentTask.totalDuration.toPrettyString()}`}<br /></Fragment>;
 		});
 	};
 
