@@ -18,13 +18,15 @@ import { TimeAndDate } from '../utils/dateTimeUtils.ts';
 
 patchItemSet(vis.util, vis.timeline);
 
-const Timeline = ({ fileData, fileData: { data: dataProp, fileName } }) => {
+const NAGS_GROUP_ID = 'nags';
+
+const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }) => {
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
 
 	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
-	const [allGroups, setAllGroups] = useState([]);
+	const [allGroups, setAllGroups] = useState();
 
 	const timeline = useRef();
 	const markers = useRef([]);
@@ -34,12 +36,80 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName } }) => {
 	const fileSettings = useRef(new FileSettings());
 
 	const prevFileName = usePrevValue(fileName);
+	const prevDataProp = usePrevValue(dataProp);
 
 	const timelineDate = '2022-04-07';
 	const nextDate = '2022-04-08';
 
 	useEffect(() => {
+		if (nagLines.length && allGroups) {
+			const stylesByTask = {};
+			const nagItems = [];
+			let currentItemStartDate;
+			let currentTask;
+
+			for (let i = 0; i < nagLines.length; i++){
+				const line = nagLines[i];
+				const parts = line.split('\t');
+
+				if (i === 0) {
+					currentItemStartDate = parts[0].split('T')[1];
+					currentTask = parts[1];
+					continue;
+				}
+
+				const previousLine = nagLines[i - 1];
+				const previousParts = previousLine.split('\t');
+
+				if (parts[1] === 'PAUSED' || (parts[1] !== 'RESUMED' && parts[1] !== currentTask)) {
+					const end = parts[1] === 'PAUSED' ? parts[0] : previousParts[0];
+					nagItems.push({
+						task: currentTask,
+						start: currentItemStartDate,
+						end: end.split('T')[1],
+						color: stylesByTask[previousParts[1]] = stylesByTask[previousParts[1]] || randomColor()
+					});
+					currentItemStartDate = parts[0].split('T')[1];
+					currentTask = parts[1] === 'PAUSED' ? currentTask : parts[1];
+					continue;
+				}
+
+				if (parts[1] === 'RESUMED') {
+					// Skip all subsequent paused/resumed
+					while (++i !== nagLines.length - 1 &&
+							nagLines[i].split('\t')[1] === 'PAUSED' &&
+							nagLines[i].split('\t')[1] === 'RESUMED');
+
+					if (i < nagLines.length) {
+						currentItemStartDate = nagLines[i - 1].split('\t')[0].split('T')[1];
+						currentTask = nagLines[i].split('\t')[1];
+					}
+				}
+			}
+
+			nagItems.forEach((item, index) => items.current.update({
+				id: NAGS_GROUP_ID + index,
+				content: item.task,
+				title: `${item.task} ${item.start} -> ${item.end}`,
+				start: timelineDate + ' ' + item.start,
+				end: timelineDate + ' ' + item.end,
+				group: NAGS_GROUP_ID,
+				style: `background-color: ${item.color}`
+			}));
+
+			setTimeout(() => allGroups.update({
+				id: NAGS_GROUP_ID,
+				visible: true
+			}), 10);
+		}
+	}, [nagLines, allGroups]);
+
+	useEffect(() => {
 		if (!dataProp.length) return;
+
+		if (dataProp.length === prevDataProp?.length && dataProp[0].label === prevDataProp[0]?.label) {
+			return;
+		}
 
 		// if fileName has changed
 		if (prevFileName !== fileName) {
@@ -164,6 +234,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName } }) => {
 		}));
 		groups.forEach(u => groupsMap.set(u.content, u));
 		groups.unshift({ id: 'all', content: 'All' });
+		groups.unshift({ id: NAGS_GROUP_ID, content: 'Nags', visible: false });
 
 		subgroups = subgroups.map(sub => Object.assign(sub, { style: `background-color: ${groupsMap.get(sub.process).color}` }));
 
@@ -214,6 +285,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName } }) => {
 		items.current = new DataSet(dataset);
 
 		const allGroups = new DataSet(groups.concat(subgroups));
+		setAllGroups(allGroups);
 
 		// Configuration for the Timeline
 		var options = {
@@ -371,6 +443,10 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName } }) => {
 	</>);
 };
 
+Timeline.defaultProps = {
+	nagLines: []
+};
+
 Timeline.propTypes = {
 	fileData: PropTypes.shape({
 		data: PropTypes.arrayOf(PropTypes.shape({
@@ -383,7 +459,8 @@ Timeline.propTypes = {
 			end: PropTypes.string,
 		})),
 		fileName: PropTypes.string
-	}).isRequired
+	}).isRequired,
+	nagLines: PropTypes.arrayOf(PropTypes.string)
 };
 
 export default Timeline;

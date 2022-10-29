@@ -77,7 +77,6 @@ const FileDropper = ({ fileDroppedHandler }) => {
 				.text()
 				.then((content) => fileDroppedHandler(content, fileName));
 
-			Neutralino.window.setTitle(`TimeTraq Visualize - ${fileName}`);
 			draggingFile.current = false;
 		}, { capture: true });
 

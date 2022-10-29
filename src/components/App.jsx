@@ -11,10 +11,16 @@ import 'react-toastify/dist/ReactToastify.min.css';
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
 const App = () => {
-	const [fileData, setFileData] = useState({ data:[] });
 	const [showChart, setShowChart] = useState('timeline');
+	const [fileData, setFileData] = useState({ data:[] });
+	const [nagLines, setNagLines] = useState([]);
 
 	const fileDroppedHandler = useCallback((fileContents, fileName) => {
+		if (fileName.match(/\d{2}-\d{2}-\d{2}\.txt/)) {
+			setNagLines(fileContents.split('\n'));
+			return;
+		}
+
 		const timelineDate = '2022-04-07';
 		// const nextDate = '2022-04-08';
 
@@ -49,7 +55,10 @@ const App = () => {
 		});
 
 		setFileData({ data, fileName });
-	}, [setFileData]);
+		setNagLines([]);
+
+		Neutralino.window.setTitle(`TimeTraq Visualize - ${fileName}`);
+	}, []);
 
 	useEffect(() => {
 		Neutralino.filesystem.getStats(DEFAULT_FILE_PATH)
@@ -76,7 +85,7 @@ const App = () => {
 			draggable
 			pauseOnHover />
 		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
-		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} /> : null}
+		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} nagLines={nagLines}  /> : null}
 	</>);
 };
 
