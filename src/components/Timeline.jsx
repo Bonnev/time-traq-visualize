@@ -144,6 +144,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 								start: timelineDate + ' ' + start,
 								end: timelineDate + ' ' + end,
 								style: `background-color: ${color}`,
+								taskName: taskName,
 								type: 'background',
 							}]);
 						});
@@ -239,7 +240,16 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		subgroups = subgroups.map(sub => Object.assign(sub, { style: `background-color: ${groupsMap.get(sub.process).color}` }));
 
 		// var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
-		var dataset = data.map((u,ind) => ({ id: ind, content: `${u.content} (${u.process})`, title: `${u.title} (${u.process})`, start: u.start, end: u.end, group: groupsMap.get(u.process).id, style: `background-color: ${groupsMap.get(u.process).color}` }));
+		var dataset = data.map((u,ind) => ({
+			id: ind,
+			content: `${u.content} (${u.process})`,
+			title: `${u.title} (${u.process})`,
+			start: u.start,
+			end: u.end,
+			selectable: false,
+			group: groupsMap.get(u.process).id,
+			style: `background-color: ${groupsMap.get(u.process).color}`
+		}));
 
 		let globalEnd;
 		const groupEnds = {};
@@ -263,6 +273,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			content: 'END',
 			start: end,
 			end: globalEnd,
+			selectable: false,
 			style: 'background-color: red; opacity: 0.3',
 			type: 'background',
 		}));
@@ -275,10 +286,27 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			}
 		}*/
 
-		var subgroupDataset = data.map((u,ind) => ({ id: ind+dataset[dataset.length-1].id+1, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: subgroupsItemsMap.get(u.content) }));
+		var subgroupDataset = data.map((u,ind) => ({
+			id: ind + dataset[dataset.length - 1].id + 1,
+			content: `${u.content} (${u.process})`,
+			title: u.title,
+			start: u.start,
+			end: u.end,
+			selectable: false,
+			group: subgroupsItemsMap.get(u.content)
+		}));
 		dataset = dataset.concat(subgroupDataset);
 
-		var allDataset = data.map((u,id) => ({ id: 'all'+id, content: `${u.content} (${u.process})`, title: u.title, start: u.start, end: u.end, group: 'all', style: `background-color: ${groupsMap.get(u.process).color}` }));
+		var allDataset = data.map((u,id) => ({
+			id: 'all' + id,
+			content: `${u.content} (${u.process})`,
+			title: u.title,
+			start: u.start,
+			end: u.end,
+			selectable: false,
+			group: 'all',
+			style: `background-color: ${groupsMap.get(u.process).color}`
+		}));
 		dataset = dataset.concat(allDataset);
 
 		dataset = dataset.concat(endBackgrounds);
@@ -295,6 +323,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				delay: 0
 			},
 			orientation: 'both',
+			multiselect: true,
 			groupTemplate: function (group) {
 				if (!group) return null;
 				var container = document.createElement('div');
@@ -324,58 +353,65 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		const timelineLocal = new vis.Timeline(container, items.current, options);
 
+		window.timeline = timelineLocal;
+
 		timelineLocal.setGroups(allGroups);
 
 		timelineLocal.on('doubleClick', function (properties) {
 			var eventProps = timeline.current.getEventProperties(properties.event);
+
+			// if doule-clicked on an existing marker
 			if (eventProps.what === 'custom-time') {
 				timeline.current.removeCustomTime(eventProps.customTime);
-				const time = moment(eventProps.time).format('HH:mm:ss');
-				markers.current.splice(markers.current.findIndex(m => m === time), 1);
-			} else {
-				var id = new Date().getTime();
-				const time = eventProps.time;
-				const text = time.getHours().toFixed(0).padStart(2, '0') + ':'
-					+ time.getMinutes().toFixed(0).padStart(2, '0') + ':'
-					+ time.getSeconds().toFixed(0).padStart(2, '0');
-				var markerText = text || undefined;
+				markers.current.splice(markers.current.findIndex(m => m.customTime === eventProps.customTime), 1);
+				return;
+			}
 
-				timeline.current.addCustomTime(eventProps.time, id);
-				timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
-				timeline.current.setCustomTimeMarker(markerText, id, false);
+			// if double-clicked on open space
 
-				if (markers.current.length % 2 === 1) {
-					const start = markers.current[markers.current.length-1];
-					const end = text;
-					// const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
-					const startDate = TimeAndDate.parse(start, 'HH:mm:ss');
-					const endDate = TimeAndDate.parse(end, 'HH:mm:ss');
-					const duration = endDate.subtract(startDate);
-					const durationWithTime = duration.withStartTime(startDate);
+			const text = moment(eventProps.time).format('HH:mm:ss');
+			var markerText = text || undefined;
 
-					const currentFileTask = fileSettings.current.getTask(task.current);
-					const color = currentFileTask?.color || randomColorRGBA(0.4);
+			timeline.current.addCustomTime(eventProps.time, eventProps.time);
+			timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
+			timeline.current.setCustomTimeMarker(markerText,  eventProps.time, false);
+			markers.current.push({ customTime: eventProps.time, time: text });
 
-					if (!currentFileTask) {
-						fileSettings.current.setTask(task.current, color, durationWithTime);
-					} else {
-						currentFileTask.addPinnedDuration(durationWithTime);
-						fileSettings.current.commit();
-					}
-					forceUpdate();
+			// if markers are even, then we have a start and and an end, so add a background/task
+			if (markers.current.length % 2 === 0) {
+				const start = markers.current[markers.current.length-2].time;
+				const end = text;
+				// const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
+				const startDate = TimeAndDate.parse(start, 'HH:mm:ss');
+				const endDate = TimeAndDate.parse(end, 'HH:mm:ss');
+				const duration = endDate.subtract(startDate);
+				const durationWithTime = duration.withStartTime(startDate);
 
-					items.current.add([{
-						id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
-						content: '',
-						title: `(${task.current}) ${start} -> ${end} (${duration.toString()})`,
-						start: timelineDate + ' ' + start,
-						end: timelineDate + ' ' + end,
-						style: `background-color: ${color}`,
-						type: 'background',
-					}]);
+				const currentFileTask = fileSettings.current.getTask(task.current);
+				const color = currentFileTask?.color || randomColorRGBA(0.4);
+
+				window.TimeAndDate = TimeAndDate;
+				window.fileSettings = fileSettings;
+				if (!currentFileTask) {
+					fileSettings.current.setTask(task.current, color, durationWithTime);
+				} else {
+					fileSettings.current.addDurationForTask(task.current, durationWithTime);
 				}
+				forceUpdate();
 
-				markers.current.push(text);
+				items.current.add([{
+					id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
+					content: '',
+					title: `(${task.current}) ${start} -> ${end} (${duration.toString()})`,
+					start: timelineDate + ' ' + start,
+					end: timelineDate + ' ' + end,
+					style: `background-color: ${color}`,
+					taskName: task.current,
+					type: 'background',
+				}]);
+
+				markers.current.forEach(m => timeline.current.removeCustomTime(m.customTime));
+				markers.current.length = 0;
 			}
 		});
 
@@ -388,7 +424,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		timeline.current = timelineLocal;
 	}, [fileData]);
 
-	function showAllGroups() {
+	const showAllGroups = useCallback(() => {
 		const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
 		const groupIds = allGroups.map(gr => gr).filter(gr => gr.nestedGroups).map(gr => gr.id);
 
@@ -398,11 +434,41 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			allGroups.update(groupIds.map(g => ({ id: g, visible: true, showNested: false })));
 		},
 		10);
-	}
+	}, [allGroups]);
 
-	function taskInputHandler(event) {
+	const taskInputHandler = useCallback((event) => {
 		task.current = event.target.value;
-	}
+	}, [task]);
+
+	const removeSelectedTask = useCallback(() => {
+		if (!timeline.current) return;
+
+		const selectedItems = timeline.current?.getSelection();
+
+		if (!selectedItems) return;
+
+		selectedItems.forEach(selectedItemId => {
+			if (!selectedItemId || !selectedItemId.startsWith('background')) return;
+
+			const timelineItem = timeline.current?.itemsData.get(selectedItemId);
+			const itemDate = timelineItem.start;
+			const taskName = timelineItem.taskName;
+			const dateString = TimeAndDate.fromDate(itemDate).format('HH:mm:ss');
+
+			fileSettings.current.removeDurationForTask(taskName, dateString);
+
+			timeline.current.itemsData.remove(selectedItemId);
+		});
+
+	}, [timeline]);
+
+	const showStatisticsPopup = useCallback(() => {
+		setStatisticsPopupOpen(true);
+	}, [setStatisticsPopupOpen]);
+
+	const hideStatisticsPopup = useCallback(() => {
+		setStatisticsPopupOpen(false);
+	}, [setStatisticsPopupOpen]);
 
 	const getBackgroundStatistics = () => {
 		return fileSettings.current.allTaskNames.map(taskName => {
@@ -413,12 +479,15 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 	return (<>
 		<div className='flex-container-with-equal-children'>
-			<button onClick={showAllGroups}>Show all groups</button>
-			<button onClick={() => setStatisticsPopupOpen(true)}>Open statistics</button>
-			<button onClick={() => toast.success('Works!')}>Test toaster!</button>
+			<button type="button" onClick={() => toast.success('Works!')}>Test toaster!</button>
+			<button type="button" onClick={showStatisticsPopup}>Open statistics</button>
+			<button type="button" onClick={removeSelectedTask}>Remove selected task</button>
 		</div>
-		<input type='text' list='tasks' name='task'
-			placeholder='Task' onChange={taskInputHandler} />
+		<div className='flex-container-with-equal-children'>
+			<input type='text' list='tasks' name='task'
+				placeholder='Task' onChange={taskInputHandler} />
+			<button type="button" onClick={showAllGroups}>Show all groups</button>
+		</div>
 		<datalist id='tasks'>
 			{fileSettings.current.allTaskNames.map(taskName =>
 				<option key={taskName} value={taskName} />
@@ -429,14 +498,14 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			initWidth={800}
 			initHeight={400} disableKeystroke
 			onFocus={() =>{} /* left for reference e.g. console.log('Modal is clicked') */}
-			className={'my-modal-custom-class'}
-			onRequestClose={() => setStatisticsPopupOpen(false)}
+			className="my-modal-custom-class"
+			onRequestClose={hideStatisticsPopup}
 			isOpen={statisticsPopupOpen}>
 			<h3 className='modal-header'>Statistics</h3>
 			<div className='body'>
 				{getBackgroundStatistics()}
 			</div>
-			<button className='modal-close' onClick={() => setStatisticsPopupOpen(false)}>
+			<button type="button" className='modal-close' onClick={hideStatisticsPopup}>
 				Close modal
 			</button>
 		</ReactModal>

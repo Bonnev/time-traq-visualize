@@ -29,11 +29,27 @@ export class TaskInfo {
 		return this;
 	}
 
+	removePinnedDurationAtTime(time: string): TaskInfo {
+		const index = this.pinnedDurations.findIndex(dur => dur.startDate.format('HH:mm:ss') === time);
+		
+		if (index > -1) {
+			this.pinnedDurations.splice(index, 1);
+		}
+		
+		this.recalculateDuration();
+
+		return this;
+	}
+
+	recalculateDuration(): void {
+		this.totalDuration = this.pinnedDurations.reduce((acc, current) => acc.add(current), new Duration(0));
+	}
+
 	static fromJSON(obj: TaskInfoString): TaskInfo {
 		const result = new TaskInfo(obj.taskName, obj.color, null);
 		result.pinnedDurations = obj.pinnedDurations.map(pinnedDuration =>
 			PinnedDuration.fromStrings(pinnedDuration.duration, pinnedDuration.startDate));
-		result.totalDuration = Duration.fromString(obj.totalDuration.duration);
+		result.recalculateDuration();;
 		return result;
 	}
 }
@@ -100,18 +116,38 @@ export default class FileSettings {
 		}
 	}
 
+	addDurationForTask(taskName: string, duration: PinnedDuration): TaskInfo {
+		const taskInfo = this.getTask(taskName);
+		if (!taskInfo) {
+			return;
+		}
+
+		taskInfo.addPinnedDuration(duration);
+		this.commit();
+	}
+
+	removeDurationForTask(taskName: string, time: string): TaskInfo {
+		const taskInfo = this.getTask(taskName);
+		if (!taskInfo) {
+			return;
+		}
+
+		taskInfo.removePinnedDurationAtTime(time);
+
+		if (taskInfo.totalDuration.totalMilliseconds === 0) {
+			delete this.tasks[taskName];
+		}
+
+		this.commit();
+	}
+
 	public getTask(taskName: string): TaskInfo {
 		return this.tasks[taskName];
 	}
 
 	public setTask(taskName: string, color: string, firstDuration: PinnedDuration) {
 		this.tasks[taskName] = new TaskInfo(taskName, color, firstDuration);
-
-		if (this.key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
-			Neutralino.storage
-				.setData(this.key, JSON.stringify({ tasks: this.tasks }))
-				.catch((err: Neutralino.Error) => toast.error('Neutralino storage set error: ' + err.message));
-		}
+		this.commit();
 	}
 
 	public commit(): void {

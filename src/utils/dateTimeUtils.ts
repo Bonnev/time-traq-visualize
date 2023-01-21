@@ -10,6 +10,13 @@ export class TimeAndDate {
 		return time;
 	}
 
+	static fromDate(date: Date): TimeAndDate {
+		const time: TimeAndDate = new TimeAndDate();
+
+		time._store = moment(date);
+		return time;
+	}
+
 	format(format: string): string {
 		return this._store.format(format);
 	}
