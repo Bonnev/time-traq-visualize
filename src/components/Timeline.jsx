@@ -9,6 +9,9 @@ import { toast } from 'react-toastify';
 import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
 
+import { ControlledMenu, MenuItem, useMenuState } from '@szhsin/react-menu';
+import '@szhsin/react-menu/dist/index.css';
+
 // utils
 import { randomColor, randomColorRGBA } from '../utils/colorUtils.js';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
@@ -37,6 +40,9 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 	const prevFileName = usePrevValue(fileName);
 	const prevDataProp = usePrevValue(dataProp);
+
+	const [menuProps, toggleMenu] = useMenuState();
+    const [anchorPoint, setAnchorPoint] = useState({ x: 0, y: 0 });
 
 	const timelineDate = '2022-04-07';
 	const nextDate = '2022-04-08';
@@ -477,6 +483,16 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		});
 	};
 
+	const timelineDivContextMenuHandler = useCallback((e) => {
+		e.preventDefault();
+		setAnchorPoint({ x: e.clientX, y: e.clientY });
+		toggleMenu(true);
+	}, [toggleMenu]);
+
+	const contextMenuOnCloseHandler = useCallback(() => {
+		toggleMenu(false);
+	}, [toggleMenu]);
+
 	return (<>
 		<div className='flex-container-with-equal-children'>
 			<button type="button" onClick={() => toast.success('Works!')}>Test toaster!</button>
@@ -493,7 +509,13 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				<option key={taskName} value={taskName} />
 			)}
 		</datalist>
-		<div id='visualization' />
+		<div id='visualization' onContextMenu={timelineDivContextMenuHandler} />
+		<ControlledMenu {...menuProps} anchorPoint={anchorPoint}
+			direction="right" onClose={contextMenuOnCloseHandler}>
+			<MenuItem>Cut</MenuItem>
+			<MenuItem>Copy</MenuItem>
+			<MenuItem>Paste</MenuItem>
+		</ControlledMenu>
 		<ReactModal
 			initWidth={800}
 			initHeight={400} disableKeystroke
