@@ -110,6 +110,16 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		}
 	}, [nagLines, allGroups]);
 
+	const timelineDivContextMenuHandler = useCallback((e) => {
+		e.preventDefault();
+		setAnchorPoint({ x: e.clientX, y: e.clientY });
+		toggleMenu(true);
+	}, [toggleMenu]);
+
+	const contextMenuOnCloseHandler = useCallback(() => {
+		toggleMenu(false);
+	}, [toggleMenu]);
+
 	useEffect(() => {
 		if (!dataProp.length) return;
 
@@ -405,8 +415,10 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				}
 				forceUpdate();
 
+				const id = 'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1);
+
 				items.current.add([{
-					id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
+					id: id,
 					content: '',
 					title: `(${task.current}) ${start} -> ${end} (${duration.toString()})`,
 					start: timelineDate + ' ' + start,
@@ -419,6 +431,20 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				markers.current.forEach(m => timeline.current.removeCustomTime(m.customTime));
 				markers.current.length = 0;
 			}
+		});
+
+		timelineLocal.on('contextmenu', (properties) => {
+			if (properties.item?.startsWith('background')) {
+				if (!timelineLocal.getSelection().length || !timelineLocal.getSelection().includes(properties.item)) {
+					timelineLocal.setSelection([properties.item]);
+				}
+
+				timelineDivContextMenuHandler(properties.event);
+			}
+		});
+
+		timelineLocal.on('click', (properties) => {
+			contextMenuOnCloseHandler();
 		});
 
 		window.onkeyup = function (e) {
@@ -483,16 +509,6 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		});
 	};
 
-	const timelineDivContextMenuHandler = useCallback((e) => {
-		e.preventDefault();
-		setAnchorPoint({ x: e.clientX, y: e.clientY });
-		toggleMenu(true);
-	}, [toggleMenu]);
-
-	const contextMenuOnCloseHandler = useCallback(() => {
-		toggleMenu(false);
-	}, [toggleMenu]);
-
 	return (<>
 		<div className='flex-container-with-equal-children'>
 			<button type="button" onClick={() => toast.success('Works!')}>Test toaster!</button>
@@ -509,12 +525,12 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				<option key={taskName} value={taskName} />
 			)}
 		</datalist>
-		<div id='visualization' onContextMenu={timelineDivContextMenuHandler} />
+		<div id='visualization' />
 		<ControlledMenu {...menuProps} anchorPoint={anchorPoint}
 			direction="right" onClose={contextMenuOnCloseHandler}>
-			<MenuItem>Cut</MenuItem>
-			<MenuItem>Copy</MenuItem>
-			<MenuItem>Paste</MenuItem>
+			<MenuItem onClick={removeSelectedTask}>
+				Remove selected task{timeline.current?.getSelection().length > 1 && 's' }
+			</MenuItem>
 		</ControlledMenu>
 		<ReactModal
 			initWidth={800}
