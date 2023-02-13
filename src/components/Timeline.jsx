@@ -9,6 +9,9 @@ import { toast } from 'react-toastify';
 import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
 
+import { ControlledMenu, MenuItem, useMenuState } from '@szhsin/react-menu';
+import '@szhsin/react-menu/dist/index.css';
+
 // utils
 import { randomColor, randomColorRGBA } from '../utils/colorUtils.js';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
@@ -37,6 +40,9 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 	const prevFileName = usePrevValue(fileName);
 	const prevDataProp = usePrevValue(dataProp);
+
+	const [menuProps, toggleMenu] = useMenuState();
+    const [anchorPoint, setAnchorPoint] = useState({ x: 0, y: 0 });
 
 	const timelineDate = '2022-04-07';
 	const nextDate = '2022-04-08';
@@ -103,6 +109,16 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			}), 10);
 		}
 	}, [nagLines, allGroups]);
+
+	const timelineDivContextMenuHandler = useCallback((e) => {
+		e.preventDefault();
+		setAnchorPoint({ x: e.clientX, y: e.clientY });
+		toggleMenu(true);
+	}, [toggleMenu]);
+
+	const contextMenuOnCloseHandler = useCallback(() => {
+		toggleMenu(false);
+	}, [toggleMenu]);
 
 	useEffect(() => {
 		if (!dataProp.length) return;
@@ -399,8 +415,10 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				}
 				forceUpdate();
 
+				const id = 'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1);
+
 				items.current.add([{
-					id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
+					id: id,
 					content: '',
 					title: `(${task.current}) ${start} -> ${end} (${duration.toString()})`,
 					start: timelineDate + ' ' + start,
@@ -413,6 +431,20 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				markers.current.forEach(m => timeline.current.removeCustomTime(m.customTime));
 				markers.current.length = 0;
 			}
+		});
+
+		timelineLocal.on('contextmenu', (properties) => {
+			if (properties.item?.startsWith('background')) {
+				if (!timelineLocal.getSelection().length || !timelineLocal.getSelection().includes(properties.item)) {
+					timelineLocal.setSelection([properties.item]);
+				}
+
+				timelineDivContextMenuHandler(properties.event);
+			}
+		});
+
+		timelineLocal.on('click', (properties) => {
+			contextMenuOnCloseHandler();
 		});
 
 		window.onkeyup = function (e) {
@@ -494,6 +526,12 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			)}
 		</datalist>
 		<div id='visualization' />
+		<ControlledMenu {...menuProps} anchorPoint={anchorPoint}
+			direction="right" onClose={contextMenuOnCloseHandler}>
+			<MenuItem onClick={removeSelectedTask}>
+				Remove selected task{timeline.current?.getSelection().length > 1 && 's' }
+			</MenuItem>
+		</ControlledMenu>
 		<ReactModal
 			initWidth={800}
 			initHeight={400} disableKeystroke
