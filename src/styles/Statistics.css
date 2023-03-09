@@ -1,0 +1,7 @@
+legend.hidden ~ span.task {
+	display: none;
+}
+
+legend.collapsable {
+	cursor: pointer;
+}

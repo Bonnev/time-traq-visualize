@@ -39,7 +39,6 @@
     "@vitejs/plugin-react": "^2.0.1",
     "concurrently": "^5.0.1",
     "eslint": "^8.2.0",
-    "eslint-plugin-jsx-a11y": "^6.5.0",
     "eslint-plugin-react": "^7.31.4",
     "eslint-plugin-react-hooks": "^4.0.8",
     "vite": "^3.0.7",

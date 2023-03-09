@@ -161,4 +161,8 @@ export default class FileSettings {
 	public get allTaskNames(): string[] {
 		return Object.keys(this.tasks);
 	}
+
+	public get allTasks(): TaskInfo[] {
+		return this.allTaskNames.map(name => this.getTask(name));
+	}
 };

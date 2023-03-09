@@ -7,6 +7,7 @@ import { TimeAndDate } from '../utils/dateTimeUtils.ts';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
+import Statistics from './Statistics.jsx';
 
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
@@ -77,6 +78,7 @@ const App = () => {
 		<div className='flex-container-with-equal-children'>
 			<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
 			<button onClick={()=>setShowChart('timeline')}>Timeline</button>
+			<button onClick={()=>setShowChart('statistics')}>Statistics</button>
 		</div>
 		<ToastContainer position="bottom-left"
 			autoClose={false}
@@ -86,6 +88,7 @@ const App = () => {
 			pauseOnHover />
 		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
 		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} nagLines={nagLines}  /> : null}
+		{showChart === 'statistics' ? <Statistics /> : null}
 	</>);
 };
 
