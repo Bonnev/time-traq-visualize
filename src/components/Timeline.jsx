@@ -30,6 +30,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
 	const [allGroups, setAllGroups] = useState();
+	const nonHiddenGroups = useRef([]);
 
 	const timeline = useRef();
 	const markers = useRef([]);
@@ -329,6 +330,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		const allGroups = new DataSet(groups.concat(subgroups));
 		setAllGroups(allGroups);
+		nonHiddenGroups.current = allGroups.getIds();
 
 		// Configuration for the Timeline
 		var options = {
@@ -352,8 +354,11 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 					// nested groups can't be hidden if they are not expanded
 					// hide the top-level group first, then nested will show
 					allGroups.update({ id: group.id, visible: false });
+					nonHiddenGroups.current = nonHiddenGroups.current.filter(g => g !== group.id);
 					// then hide also the nested ones
 					if (group.nestedGroups && group.nestedGroups.length) {
+						nonHiddenGroups.current = nonHiddenGroups.current.filter(g => !group.nestedGroups.includes(g));
+						console.log('nonhidden',nonHiddenGroups.current);
 						setTimeout(() =>
 							allGroups.update(group.nestedGroups.map(g => ({ id: g, visible: false }))),
 						10);
@@ -444,6 +449,22 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		timelineLocal.on('click', (properties) => {
 			contextMenuOnCloseHandler();
+		});
+
+		timelineLocal.on('rangechanged', function (properties) {
+			document.body.style.cursor = 'pointer';
+			allGroups.update(nonHiddenGroups.current.map(g => ({ id: g, visible: true })));
+
+			setTimeout(() => {
+				let items = timelineLocal.getVisibleItems();
+				items = items.filter(item => !item.startsWith || !item.startsWith('endbackground'));
+
+				const visibleGroupIds = new Set(items.map(item => timelineLocal.itemsData.get(item).group));
+				const invisibleGroupIds = nonHiddenGroups.current.filter(group => !visibleGroupIds.has(group));
+
+				allGroups.update(invisibleGroupIds.map(g => ({ id: g, visible: false })));
+				document.body.style.cursor = '';
+			}, 10);
 		});
 
 		window.onkeyup = function (e) {
