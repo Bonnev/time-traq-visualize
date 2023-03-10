@@ -37,7 +37,7 @@ const App = () => {
 			if (index - 1 < 0) return;
 
 			// C:\Program Files\...\msedge.exe	Rewriting Git History... - YouTube and 30 more pages - Personal - Microsoft Edge	08:50:06	08:53:47
-			const prevRow = matrix[index-1];
+			const prevRow = matrix[index - 1];
 			// const current = matrix[index]; // automatic by first parameter
 
 			const prevRowTime = TimeAndDate.parse(prevRow[3], 'HH:mm:ss');

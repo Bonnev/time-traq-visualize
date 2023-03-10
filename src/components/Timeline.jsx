@@ -16,7 +16,7 @@ import '@szhsin/react-menu/dist/index.css';
 import { randomColor, randomColorRGBA } from '../utils/colorUtils.js';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 import usePrevValue from '../utils/usePrevValue.ts';
-import FileSettings, { TaskInfo } from '../utils/FileSettings.ts';
+import FileSettings from '../utils/FileSettings.ts';
 import { TimeAndDate } from '../utils/dateTimeUtils.ts';
 
 patchItemSet(vis.util, vis.timeline);
@@ -42,10 +42,10 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	const prevDataProp = usePrevValue(dataProp);
 
 	const [menuProps, toggleMenu] = useMenuState();
-    const [anchorPoint, setAnchorPoint] = useState({ x: 0, y: 0 });
+	const [anchorPoint, setAnchorPoint] = useState({ x: 0, y: 0 });
 
 	const timelineDate = '2022-04-07';
-	const nextDate = '2022-04-08';
+	// const nextDate = '2022-04-08';
 
 	useEffect(() => {
 		if (nagLines.length && allGroups) {
@@ -134,8 +134,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				.then(newSettings => {
 					fileSettings.current = newSettings;
 
-					fileSettings.current.allTaskNames.forEach((taskName, index) => {
-						var id = index;
+					fileSettings.current.allTaskNames.forEach(taskName => {
 						const currentTask = fileSettings.current.getTask(taskName);
 
 						// const time = eventProps.time;
@@ -165,7 +164,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 							}]);
 						});
 					});
-				})
+				});
 		}
 
 		// DOM element where the Timeline will be attached
@@ -242,7 +241,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		var groupsMap = new Map();
 		var groups = unique.map((u,id) => ({
-			id: id+subgroups[subgroups.length-1].id+1,
+			id: id + subgroups[subgroups.length - 1].id + 1,
 			content: u.process,
 			nestedGroups: subgroupsMap.get(u.process) || undefined,
 			showNested: false,
@@ -395,7 +394,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 			// if markers are even, then we have a start and and an end, so add a background/task
 			if (markers.current.length % 2 === 0) {
-				const start = markers.current[markers.current.length-2].time;
+				const start = markers.current[markers.current.length - 2].time;
 				const end = text;
 				// const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
 				const startDate = TimeAndDate.parse(start, 'HH:mm:ss');

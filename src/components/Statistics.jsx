@@ -1,5 +1,5 @@
 import { React, useEffect, useState, useCallback, Fragment } from 'react';
-import FileSettings, { TaskInfo } from '../utils/FileSettings.ts';
+import FileSettings from '../utils/FileSettings.ts';
 import { Duration } from '../utils/dateTimeUtils';
 
 import '../styles/Statistics.css';
@@ -25,7 +25,7 @@ const Statistics = () => {
 			}
 		});
 		return result;
-	}
+	};
 
 	const onSubmit = useCallback(() => {
 		const inputs = document.getElementById('files').querySelectorAll('input[type="checkbox"');
@@ -63,7 +63,7 @@ const Statistics = () => {
 		const totalsAtEnd = ([a], [b]) => a === 'Total' ? 1 : (b === 'Total' ? -1 : (a.localeCompare(b)));
 
 		allStatistics.push(
-			<fieldset>
+			<fieldset key="totals">
 				<legend>Totals</legend>
 				{Object.entries(accumulatedStatistics).sort(totalsAtEnd).map(([taskName, totalDuration]) =>
 					<span key={taskName} className="task">{`${taskName}: ${totalDuration.toString()}`}<br /></span>)}
