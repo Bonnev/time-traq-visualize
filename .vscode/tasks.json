@@ -1,0 +1,26 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "start",
+			"detail": "Runs the start script, running both vite and neu. The debug browser window will run after this task, so that should be used in combination with vscode",
+			"isBackground": true,
+			"problemMatcher": {
+				"fileLocation": "autoDetect",
+				"owner": "neu",
+				"pattern": {
+					"regexp": ".",
+					"file": 1,
+					"location": 2,
+					"message": 3
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "Starting process",
+					"endsPattern": "neu CLI connected with the application"
+				}
+			}
+		}
+	]
+}
