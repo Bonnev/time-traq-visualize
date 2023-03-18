@@ -5,15 +5,15 @@ import ReactModal from 'react-modal-resizable-draggable';
 import moment from 'moment';
 import { DataSet } from 'vis-data';
 import { toast } from 'react-toastify';
-// import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
-import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
+import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
+// import * as viss from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
 
 import { ControlledMenu, MenuItem, useMenuState } from '@szhsin/react-menu';
 import '@szhsin/react-menu/dist/index.css';
 
 // utils
-import { randomColor, randomColorRGBA } from '../utils/colorUtils.js';
+import { randomColor, randomColorRGBA } from '../utils/colorUtils.ts';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 import usePrevValue from '../utils/usePrevValue.ts';
 import FileSettings from '../utils/FileSettings.ts';
