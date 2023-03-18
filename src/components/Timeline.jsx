@@ -131,41 +131,32 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		// if fileName has changed
 		if (prevFileName !== fileName) {
-			//fileSettings.current = new FileSettings(fileName);
 			FileSettings.newFile(fileName)
 				.then(newSettings => {
 					fileSettings.current = newSettings;
 
-					fileSettings.current.allTaskNames.forEach(taskName => {
-						const currentTask = fileSettings.current.getTask(taskName);
-
-						// const time = eventProps.time;
-						// const text = time.getHours().toFixed(0).padStart(2, '0') + ':'
-						// 	+ time.getMinutes().toFixed(0).padStart(2, '0') + ':'
-						// 	+ time.getSeconds().toFixed(0).padStart(2, '0');
-
-						currentTask.pinnedDurations.map(pinnedDuration => {
-
+					fileSettings.current.allTasks.forEach(currentTask => {
+						currentTask.pinnedDurations.forEach(pinnedDuration => {
 							const start = pinnedDuration.startDate.format('HH:mm:ss');
 							const endTime = pinnedDuration.startDate.add(pinnedDuration);
 							const end = endTime.format('HH:mm:ss');
 
 							const color = currentTask?.color || randomColorRGBA(0.4);
 
-							forceUpdate();
-
 							items.current.add([{
 								id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
 								content: '',
-								title: `(${taskName}) ${start} -> ${end} (${pinnedDuration.toString()})`,
+								title: `(${currentTask.taskName}) ${start} -> ${end} (${pinnedDuration.toString()})`,
 								start: timelineDate + ' ' + start,
 								end: timelineDate + ' ' + end,
 								style: `background-color: ${color}`,
-								taskName: taskName,
+								taskName: currentTask.taskName,
 								type: 'background',
 							}]);
 						});
 					});
+
+					forceUpdate();
 				});
 		}
 
@@ -175,6 +166,8 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		let unique = [];
 		backgroundsByTask.current = {};
 
+		// group items matching these regexes and copy them to new groups
+		// the imposibleregextomach is so that we always start with 1 - the extractedIndex is used in checks when sorting further down
 		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
 		let dataToAppend = [];
 		dataProp.forEach((datum) => {
@@ -188,6 +181,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		});
 		const data = dataProp.concat(dataToAppend);
 
+		// group items matching these regexes and separate them into new groups
 		const groupsToExtract = [' - Personal - '];
 		const extractNewNames = ['Personal'];
 		data.forEach((datum) => {
@@ -195,6 +189,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			if (matchingGroupIndex > -1) {
 				const matches = datum.title.match(new RegExp(groupsToExtract[matchingGroupIndex], 'g'));
 				if (matches && matches.length === 1) {
+					// change process and label, grouping will happen automatically with the main logic
 					datum.process = extractNewNames[matchingGroupIndex];
 					datum.label = extractNewNames[matchingGroupIndex];
 				}
