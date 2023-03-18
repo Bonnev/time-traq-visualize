@@ -5,3 +5,5 @@ legend.hidden ~ span.task {
 legend.collapsable {
 	cursor: pointer;
 }
+
+html.wait, html.wait * { cursor: wait !important; }

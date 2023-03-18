@@ -18,6 +18,7 @@ import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 import usePrevValue from '../utils/usePrevValue.ts';
 import FileSettings from '../utils/FileSettings.ts';
 import { TimeAndDate } from '../utils/dateTimeUtils.ts';
+import { setAsyncTimeout } from '../utils/callbackPromise.ts';
 
 patchItemSet(vis.util, vis.timeline);
 
@@ -447,15 +448,16 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			}
 		});
 
-		timelineLocal.on('click', (properties) => {
+		timelineLocal.on('click', (/*properties*/) => {
 			contextMenuOnCloseHandler();
 		});
 
-		timelineLocal.on('rangechanged', function (properties) {
-			document.body.style.cursor = 'pointer';
-			allGroups.update(nonHiddenGroups.current.map(g => ({ id: g, visible: true })));
-
-			setTimeout(() => {
+		timelineLocal.on('rangechanged', function (/*properties*/) {
+			setAsyncTimeout(undefined, () =>
+				document.documentElement.classList.add('wait')
+			).thenCallback(0, () =>
+				allGroups.update(nonHiddenGroups.current.map(g => ({ id: g, visible: true })))
+			).thenCallback(10, () => {
 				let items = timelineLocal.getVisibleItems();
 				items = items.filter(item => !item.startsWith || !item.startsWith('endbackground'));
 
@@ -463,8 +465,8 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				const invisibleGroupIds = nonHiddenGroups.current.filter(group => !visibleGroupIds.has(group));
 
 				allGroups.update(invisibleGroupIds.map(g => ({ id: g, visible: false })));
-				document.body.style.cursor = '';
-			}, 10);
+				document.documentElement.classList.remove('wait');
+			});
 		});
 
 		window.onkeyup = function (e) {
