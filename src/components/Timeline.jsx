@@ -143,8 +143,15 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 							const color = currentTask?.color || randomColorRGBA(0.4);
 
+							const allBackgroundItems = items.current.map(i=>i)
+								.filter(i => typeof i.id === 'string' && i.id.startsWith('background')) // filter background items
+								.map(i => parseInt(i.id.substring('background'.length))); // get their ids e.g. 'background15' -> 15
+
+							const maxId = allBackgroundItems.length ? Math.max.apply(null, allBackgroundItems) : 0;
+							const id = 'background' + (maxId + 1);
+
 							items.current.add([{
-								id:'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1),
+								id: id,
 								content: '',
 								title: `(${currentTask.taskName}) ${start} -> ${end} (${pinnedDuration.toString()})`,
 								start: timelineDate + ' ' + start,
@@ -161,7 +168,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		}
 
 		// DOM element where the Timeline will be attached
-		var container = document.getElementById('visualization');
+		const container = document.getElementById('visualization');
 
 		let unique = [];
 		backgroundsByTask.current = {};
@@ -220,9 +227,9 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			}
 		});
 
-		var subgroupsMap = new Map();
-		var subgroupsItemsMap = new Map();
-		var subgroups = data.map((u,id) => ({
+		const subgroupsMap = new Map();
+		const subgroupsItemsMap = new Map();
+		let subgroups = data.map((u,id) => ({
 			id: id,
 			content: u.content,
 			treeLevel: 2,
@@ -236,8 +243,8 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process, subgroupsMap.get(u.process).concat([u.id])) : subgroupsMap.set(u.process, [u.id]));
 		subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
 
-		var groupsMap = new Map();
-		var groups = unique.map((u,id) => ({
+		const groupsMap = new Map();
+		const groups = unique.map((u,id) => ({
 			id: id + subgroups[subgroups.length - 1].id + 1,
 			content: u.process,
 			nestedGroups: subgroupsMap.get(u.process) || undefined,
@@ -251,8 +258,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		subgroups = subgroups.map(sub => Object.assign(sub, { style: `background-color: ${groupsMap.get(sub.process).color}` }));
 
-		// var dataset = data.map((u,ind) => ({id: ind, content: `${u.process} [${u.content}]`, title: `${u.title} [${u.start} - ${u.end}]`, start: u.start, end: u.end, group: groupsMap.get(u.process).id}));
-		var dataset = data.map((u,ind) => ({
+		let dataset = data.map((u,ind) => ({
 			id: ind,
 			content: `${u.content} (${u.process})`,
 			title: `${u.title} (${u.process})`,
@@ -298,7 +304,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			}
 		}*/
 
-		var subgroupDataset = data.map((u,ind) => ({
+		const subgroupDataset = data.map((u,ind) => ({
 			id: ind + dataset[dataset.length - 1].id + 1,
 			content: `${u.content} (${u.process})`,
 			title: u.title,
@@ -309,7 +315,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		}));
 		dataset = dataset.concat(subgroupDataset);
 
-		var allDataset = data.map((u,id) => ({
+		const allDataset = data.map((u,id) => ({
 			id: 'all' + id,
 			content: `${u.content} (${u.process})`,
 			title: u.title,
@@ -329,7 +335,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		nonHiddenGroups.current = allGroups.getIds();
 
 		// Configuration for the Timeline
-		var options = {
+		const options = {
 			stack: false,
 			tooltip: {
 				followMouse: true,
@@ -339,11 +345,11 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			multiselect: true,
 			groupTemplate: function (group) {
 				if (!group) return null;
-				var container = document.createElement('div');
-				var label = document.createElement('span');
+				const container = document.createElement('div');
+				const label = document.createElement('span');
 				label.innerHTML = group.content + ' ';
 				container.insertAdjacentElement('afterBegin', label);
-				var hide = document.createElement('button');
+				const hide = document.createElement('button');
 				hide.innerHTML = 'hide';
 				hide.style.fontSize = 'small';
 				hide.addEventListener('click', function () {
@@ -354,7 +360,6 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 					// then hide also the nested ones
 					if (group.nestedGroups && group.nestedGroups.length) {
 						nonHiddenGroups.current = nonHiddenGroups.current.filter(g => !group.nestedGroups.includes(g));
-						console.log('nonhidden',nonHiddenGroups.current);
 						setTimeout(() =>
 							allGroups.update(group.nestedGroups.map(g => ({ id: g, visible: false }))),
 						10);
@@ -374,7 +379,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		timelineLocal.setGroups(allGroups);
 
 		timelineLocal.on('doubleClick', function (properties) {
-			var eventProps = timeline.current.getEventProperties(properties.event);
+			const eventProps = timeline.current.getEventProperties(properties.event);
 
 			// if doule-clicked on an existing marker
 			if (eventProps.what === 'custom-time') {
@@ -386,7 +391,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			// if double-clicked on open space
 
 			const text = moment(eventProps.time).format('HH:mm:ss');
-			var markerText = text || undefined;
+			const markerText = text || undefined;
 
 			timeline.current.addCustomTime(eventProps.time, eventProps.time);
 			timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
@@ -415,7 +420,12 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				}
 				forceUpdate();
 
-				const id = 'background' + (items.current.map(i=>i).filter(i => i.type && i.type === 'background').length + 1);
+				const allBackgroundItems = items.current.map(i=>i)
+					.filter(i => typeof i.id === 'string' && i.id.startsWith('background')) // filter background items
+					.map(i => parseInt(i.id.substring('background'.length))); // get their ids e.g. 'background15' -> 15
+
+				const maxId = allBackgroundItems.length ? Math.max.apply(null, allBackgroundItems) : 0;
+				const id = 'background' + (maxId + 1);
 
 				items.current.add([{
 					id: id,
@@ -449,10 +459,13 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		timelineLocal.on('rangechanged', function (/*properties*/) {
 			setAsyncTimeout(undefined, () =>
+				// change cursor to wait (hourglass)
 				document.documentElement.classList.add('wait')
-			).thenCallback(0, () =>
+			).thenCallback(0, () => // trigger repaint
+				// show all non-hidden groups in order to check which items are visible
 				allGroups.update(nonHiddenGroups.current.map(g => ({ id: g, visible: true })))
-			).thenCallback(10, () => {
+			).thenCallback(10, () => { // trigger repaint
+				// get all visible items so that we can hide all groups that have no visible items
 				let items = timelineLocal.getVisibleItems();
 				items = items.filter(item => !item.startsWith || !item.startsWith('endbackground'));
 
@@ -460,7 +473,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				const invisibleGroupIds = nonHiddenGroups.current.filter(group => !visibleGroupIds.has(group));
 
 				allGroups.update(invisibleGroupIds.map(g => ({ id: g, visible: false })));
-				document.documentElement.classList.remove('wait');
+				document.documentElement.classList.remove('wait'); // revert cursor to default
 			});
 		});
 
@@ -489,7 +502,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		task.current = event.target.value;
 	}, [task]);
 
-	const removeSelectedTask = useCallback(() => {
+	const removeSelectedTasks = useCallback(() => {
 		if (!timeline.current) return;
 
 		const selectedItems = timeline.current?.getSelection();
@@ -528,24 +541,22 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 	return (<>
 		<div className='flex-container-with-equal-children'>
-			<button type="button" onClick={() => toast.success('Works!')}>Test toaster!</button>
 			<button type="button" onClick={showStatisticsPopup}>Open statistics</button>
-			<button type="button" onClick={removeSelectedTask}>Remove selected task</button>
 		</div>
 		<div className='flex-container-with-equal-children'>
 			<input type='text' list='tasks' name='task'
 				placeholder='Task' onChange={taskInputHandler} />
+			<datalist id='tasks'>
+				{fileSettings.current.allTaskNames.map(taskName =>
+					<option key={taskName} value={taskName} />
+				)}
+			</datalist>
 			<button type="button" onClick={showAllGroups}>Show all groups</button>
 		</div>
-		<datalist id='tasks'>
-			{fileSettings.current.allTaskNames.map(taskName =>
-				<option key={taskName} value={taskName} />
-			)}
-		</datalist>
 		<div id='visualization' />
 		<ControlledMenu {...menuProps} anchorPoint={anchorPoint}
 			direction="right" onClose={contextMenuOnCloseHandler}>
-			<MenuItem onClick={removeSelectedTask}>
+			<MenuItem onClick={removeSelectedTasks}>
 				Remove selected task{timeline.current?.getSelection().length > 1 && 's' }
 			</MenuItem>
 		</ControlledMenu>

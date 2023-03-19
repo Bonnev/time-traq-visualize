@@ -76,6 +76,11 @@ h3.modal-header {
 	margin: 13px;
 }
 
+div.flexible-modal div.body {
+	overflow: auto;
+	height: calc(100% - 100px);
+}
+
 .vis-background.vis-selected {
 	border: 2px solid #97B0F8;
 }

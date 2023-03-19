@@ -1,8 +1,9 @@
-import { React, useEffect, useState, useCallback } from 'react';
+import { React, useEffect, useState, useCallback, Fragment } from 'react';
 
 import ChartJs from './ChartJs.jsx';
 import FileDropper from './FileDropper.jsx';
 import Timeline from './Timeline.jsx';
+import ReactModal from 'react-modal-resizable-draggable';
 import { TimeAndDate } from '../utils/dateTimeUtils.ts';
 
 import { ToastContainer, toast } from 'react-toastify';
@@ -15,6 +16,8 @@ const App = () => {
 	const [showChart, setShowChart] = useState('timeline');
 	const [fileData, setFileData] = useState({ data:[] });
 	const [nagLines, setNagLines] = useState([]);
+	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+	const [errors, setErrors] = useState([]);
 
 	const fileDroppedHandler = useCallback((fileContents, fileName) => {
 		if (fileName.match(/\d{2}-\d{2}-\d{2}\.txt/)) {
@@ -70,15 +73,31 @@ const App = () => {
 			.catch(() => toast.error(`Default file "${DEFAULT_FILE_PATH}" not found`, { autoClose: 5000 }));
 	}, [fileDroppedHandler]);
 
+	useEffect(() => {
+		window.addEventListener('error', function(event) {
+			toast.error(event.message);
+			setErrors(errors => errors.concat([event.error.stack]));
+		});
+	}, []);
+
 	const dataCopy = fileData.data.map(datum => ({ ...datum })); // copy of data
 	const fileDataCopy = { fileName: fileData.fileName, data: dataCopy };
+
+	const hideSettingsModal = useCallback(() => {
+		setSettingsModalOpen(false);
+	}, []);
+
+	const showSettingsModal = useCallback(() => {
+		setSettingsModalOpen(true);
+	}, []);
 
 	return (<>
 		<FileDropper fileDroppedHandler={fileDroppedHandler} />
 		<div className='flex-container-with-equal-children'>
-			<button onClick={()=>setShowChart('chartjs')}>ChartJs</button>
-			<button onClick={()=>setShowChart('timeline')}>Timeline</button>
-			<button onClick={()=>setShowChart('statistics')}>Statistics</button>
+			<button type="button" onClick={()=>setShowChart('chartjs')}>ChartJs</button>
+			<button type="button" onClick={()=>setShowChart('timeline')}>Timeline</button>
+			<button type="button" onClick={()=>setShowChart('statistics')}>Statistics</button>
+			<button type="button" onClick={showSettingsModal}>Settings</button>
 		</div>
 		<ToastContainer position="bottom-left"
 			autoClose={false}
@@ -89,6 +108,26 @@ const App = () => {
 		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
 		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} nagLines={nagLines}  /> : null}
 		{showChart === 'statistics' ? <Statistics /> : null}
+		<ReactModal
+			initWidth={800}
+			initHeight={400} disableKeystroke
+			onFocus={() =>{} /* left for reference e.g. console.log('Modal is clicked') */}
+			className="my-modal-custom-class"
+			onRequestClose={hideSettingsModal}
+			isOpen={settingsModalOpen}>
+			<h3 className='modal-header'>Settings</h3>
+			<div className='body'>
+				<h4>Errors</h4>
+				{errors.map(error =>
+					<div key={error} style={{ border: '1px solid black', margin: 5 }}>
+						{error.split('\n').map(line =>
+							<Fragment key={line}>{line}<br /></Fragment>)}
+					</div>)}
+			</div>
+			<button type="button" className='modal-close' onClick={hideSettingsModal}>
+				Close modal
+			</button>
+		</ReactModal>
 	</>);
 };
 
