@@ -119,6 +119,7 @@
 		"react/jsx-pascal-case": "warn",
 		"react/jsx-props-no-multi-spaces": "warn",
 		"react/jsx-tag-spacing": "warn",
-		"no-var": "warn"
+		"no-var": "warn",
+		"comma-spacing": "warn"
 	}
 }

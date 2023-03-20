@@ -2,9 +2,7 @@
 import { React, Fragment, useEffect, useState, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import ReactModal from 'react-modal-resizable-draggable';
-import moment from 'moment';
 import { DataSet } from 'vis-data';
-import { toast } from 'react-toastify';
 import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
 // import * as viss from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
@@ -182,7 +180,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			if (matchingGroupIndex > -1) {
 				const matches = datum.title.match(new RegExp(groupsToCopy[matchingGroupIndex], 'g'));
 				if (matches && matches.length === 1) {
-					dataToAppend.push({ ...datum, process: matches[0],label: matches[0], extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})` });
+					dataToAppend.push({ ...datum, process: matches[0], label: matches[0], extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})` });
 				}
 			}
 		});
@@ -213,7 +211,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		unique = unique.map(u => Object.assign(u, { color: randomColor() }));
 
-		unique.sort((a,b) => {
+		unique.sort((a, b) => {
 			if (a.extractedIndex && b.extractedIndex && b.extractedIndex - a.extractedIndex === 0) {
 				return b.number - a.number;
 			} else if (a.extractedIndex && b.extractedIndex) {
@@ -229,7 +227,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		const subgroupsMap = new Map();
 		const subgroupsItemsMap = new Map();
-		let subgroups = data.map((u,id) => ({
+		let subgroups = data.map((u, id) => ({
 			id: id,
 			content: u.content,
 			treeLevel: 2,
@@ -244,7 +242,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
 
 		const groupsMap = new Map();
-		const groups = unique.map((u,id) => ({
+		const groups = unique.map((u, id) => ({
 			id: id + subgroups[subgroups.length - 1].id + 1,
 			content: u.process,
 			nestedGroups: subgroupsMap.get(u.process) || undefined,
@@ -258,7 +256,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		subgroups = subgroups.map(sub => Object.assign(sub, { style: `background-color: ${groupsMap.get(sub.process).color}` }));
 
-		let dataset = data.map((u,ind) => ({
+		let dataset = data.map((u, ind) => ({
 			id: ind,
 			content: `${u.content} (${u.process})`,
 			title: `${u.title} (${u.process})`,
@@ -276,11 +274,11 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			const currentGroup = datum.group;
 			const groupEnd = groupEnds[currentGroup];
 
-			if(!groupEnd || moment(groupEnd,'YYYY-MM-DD HH:mm:ss').isBefore(moment(currentEnd,'YYYY-MM-DD HH:mm:ss'))) {
+			if(!groupEnd || TimeAndDate.parse(groupEnd, 'YYYY-MM-DD HH:mm:ss').isBefore(TimeAndDate.parse(currentEnd, 'YYYY-MM-DD HH:mm:ss'))) {
 				groupEnds[currentGroup] = currentEnd;
 			}
 
-			if(!globalEnd || moment(globalEnd,'YYYY-MM-DD HH:mm:ss').isBefore(moment(currentEnd,'YYYY-MM-DD HH:mm:ss'))) {
+			if(!globalEnd || TimeAndDate.parse(globalEnd, 'YYYY-MM-DD HH:mm:ss').isBefore(TimeAndDate.parse(currentEnd, 'YYYY-MM-DD HH:mm:ss'))) {
 				globalEnd = currentEnd;
 			}
 		});
@@ -304,7 +302,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			}
 		}*/
 
-		const subgroupDataset = data.map((u,ind) => ({
+		const subgroupDataset = data.map((u, ind) => ({
 			id: ind + dataset[dataset.length - 1].id + 1,
 			content: `${u.content} (${u.process})`,
 			title: u.title,
@@ -315,7 +313,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		}));
 		dataset = dataset.concat(subgroupDataset);
 
-		const allDataset = data.map((u,id) => ({
+		const allDataset = data.map((u, id) => ({
 			id: 'all' + id,
 			content: `${u.content} (${u.process})`,
 			title: u.title,
@@ -390,7 +388,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 			// if double-clicked on open space
 
-			const text = moment(eventProps.time).format('HH:mm:ss');
+			const text = TimeAndDate.fromDate(eventProps.time).format('HH:mm:ss');
 			const markerText = text || undefined;
 
 			timeline.current.addCustomTime(eventProps.time, eventProps.time);
@@ -402,9 +400,10 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			if (markers.current.length % 2 === 0) {
 				const start = markers.current[markers.current.length - 2].time;
 				const end = text;
-				// const duration = moment.duration(moment(end,'HH:mm:ss').subtract(moment(start,'HH:mm:ss')));
+
 				const startDate = TimeAndDate.parse(start, 'HH:mm:ss');
 				const endDate = TimeAndDate.parse(end, 'HH:mm:ss');
+
 				const duration = endDate.subtract(startDate);
 				const durationWithTime = duration.withStartTime(startDate);
 

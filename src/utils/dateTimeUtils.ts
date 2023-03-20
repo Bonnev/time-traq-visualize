@@ -31,6 +31,10 @@ export class TimeAndDate {
 		return result;
 	}
 
+	isBefore(time: TimeAndDate): boolean {
+		return this._store.isBefore(time._store);
+	}
+
 	toString(): string {
 		return this.format('YYYY-MM-DD HH:mm:ss');
 	}
