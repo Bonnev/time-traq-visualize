@@ -1,4 +1,4 @@
-/// <reference path="./neutralino.d.ts" />
+/// <reference path="../definitions/neutralino.d.ts" />
 
 import { object } from 'prop-types';
 import { toast } from 'react-toastify';

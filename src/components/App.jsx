@@ -3,12 +3,12 @@ import { React, useEffect, useState, useCallback, Fragment } from 'react';
 import ChartJs from './ChartJs.jsx';
 import FileDropper from './FileDropper.jsx';
 import Timeline from './Timeline.jsx';
-import ReactModal from 'react-modal-resizable-draggable';
 import { TimeAndDate } from '../utils/dateTimeUtils.ts';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
 import Statistics from './Statistics.jsx';
+import Popup from './Popup';
 
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
@@ -108,13 +108,15 @@ const App = () => {
 		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
 		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} nagLines={nagLines}  /> : null}
 		{showChart === 'statistics' ? <Statistics /> : null}
-		<ReactModal
-			initWidth={800}
-			initHeight={400} disableKeystroke
-			onFocus={() =>{} /* left for reference e.g. console.log('Modal is clicked') */}
+		<Popup
+			top={10}
+			left={10}
+			initialWidth={800}
+			initialHeight={400}
 			className="my-modal-custom-class"
-			onRequestClose={hideSettingsModal}
+			onClose={hideSettingsModal}
 			isOpen={settingsModalOpen}>
+
 			<h3 className='modal-header'>Settings</h3>
 			<div className='body'>
 				<h4>Errors</h4>
@@ -127,7 +129,7 @@ const App = () => {
 			<button type="button" className='modal-close' onClick={hideSettingsModal}>
 				Close modal
 			</button>
-		</ReactModal>
+		</Popup>
 	</>);
 };
 

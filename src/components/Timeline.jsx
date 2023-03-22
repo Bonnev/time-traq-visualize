@@ -1,7 +1,7 @@
 // packages
 import { React, Fragment, useEffect, useState, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
-import ReactModal from 'react-modal-resizable-draggable';
+import Popup from './Popup';
 import { DataSet } from 'vis-data';
 import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // minified
 // import * as viss from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
@@ -559,13 +559,15 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				Remove selected task{timeline.current?.getSelection().length > 1 && 's' }
 			</MenuItem>
 		</ControlledMenu>
-		<ReactModal
-			initWidth={800}
-			initHeight={400} disableKeystroke
-			onFocus={() =>{} /* left for reference e.g. console.log('Modal is clicked') */}
+		<Popup
+			top={10}
+			left={10}
+			initialWidth={800}
+			initialHeight={400}
 			className="my-modal-custom-class"
-			onRequestClose={hideStatisticsPopup}
+			onClose={hideStatisticsPopup}
 			isOpen={statisticsPopupOpen}>
+
 			<h3 className='modal-header'>Statistics</h3>
 			<div className='body'>
 				{getBackgroundStatistics()}
@@ -573,7 +575,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			<button type="button" className='modal-close' onClick={hideStatisticsPopup}>
 				Close modal
 			</button>
-		</ReactModal>
+		</Popup>
 	</>);
 };
 
