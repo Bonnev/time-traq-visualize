@@ -22,6 +22,13 @@ patchItemSet(vis.util, vis.timeline);
 
 const NAGS_GROUP_ID = 'nags';
 
+const html = innerHTML => {
+	innerHTML = innerHTML.replaceAll('\n', '<br />');
+	const el = document.createElement('span');
+	el.innerHTML = innerHTML;
+	return el;
+};
+
 const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }) => {
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
@@ -96,7 +103,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			nagItems.forEach((item, index) => items.current.update({
 				id: NAGS_GROUP_ID + index,
 				content: item.task,
-				title: `${item.task} ${item.start} -> ${item.end}`,
+				title: html(`${item.task}\n${item.start} -> ${item.end}`),
 				start: timelineDate + ' ' + item.start,
 				end: timelineDate + ' ' + item.end,
 				group: NAGS_GROUP_ID,
@@ -151,7 +158,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 							items.current.add([{
 								id: id,
 								content: '',
-								title: `(${currentTask.taskName}) ${start} -> ${end} (${pinnedDuration.toPrettyString()})`,
+								title: html(`(${currentTask.taskName})\n${start} -> ${end}\n(${pinnedDuration.toPrettyString()})`),
 								start: timelineDate + ' ' + start,
 								end: timelineDate + ' ' + end,
 								style: `background-color: ${color}`,
@@ -259,7 +266,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		let dataset = data.map((u, ind) => ({
 			id: ind,
 			content: `${u.content} (${u.process})`,
-			title: `${u.title} (${u.process})`,
+			title: html(`${u.title}\n${u.start} -> ${u.end}\n(${u.process})`),
 			start: u.start,
 			end: u.end,
 			selectable: false,
@@ -429,7 +436,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				items.current.add([{
 					id: id,
 					content: '',
-					title: `(${task.current}) ${start} -> ${end} (${duration.toPrettyString()})`,
+					title: html(`(${task.current})\n${start} -> ${end}\n(${duration.toPrettyString()})`),
 					start: timelineDate + ' ' + start,
 					end: timelineDate + ' ' + end,
 					style: `background-color: ${color}`,

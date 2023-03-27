@@ -1,21 +1,25 @@
 import moment from 'moment';
 
-interface PrettyStringable {
+export interface PrettyStringable {
 	toPrettyString(): string;
 }
 
-interface TypedJson { type: string };
-type TypedValue = { type: string, value: Json };
-type Json = string | number | object | (string | number | object)[] | TypedJson | TypedValue;
+export interface TypedJson { type: string };
+export type TypedValue = { type: string, value: Json };
+export type Json = string | number | object | (string | number | object)[] | TypedJson | TypedValue;
 
-interface Serializable {
+export interface Serializable {
 	toJSON(): Json;
+}
+
+export interface Deserializable {
+	fromJSON: Function;
 }
 
 (window as any).serializables ||= [];
 
 export class TimeAndDate implements PrettyStringable, Serializable {
-	static DEFAULT_FORMAT: string = 'YYYY-MM-DD HH:mm:ss';
+	static DEFAULT_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 	
 	public type: string = "TimeAndDate";
 	_store : moment.Moment = moment();
@@ -94,7 +98,7 @@ export class Duration implements PrettyStringable, Serializable {
 	}
 
 	toPrettyString(): string {
-		return String(this.toJSON().value);
+		return String(this._libDuration.toString());
 	}
 
 	toJSON(): TypedValue {

@@ -2,6 +2,8 @@
 
 import { toast } from 'react-toastify';
 import { Duration, PinnedDuration } from './dateTimeUtils';
+import Legacy from './legacyUtils';
+import Metadata, { MetadataType } from './SettingsMetadata';
 
 const fileNameToKey = (fileName: string): string => fileName
 	.substring(0, fileName.lastIndexOf('.'))
@@ -59,9 +61,12 @@ type TasksObject = {
 	[key: string]: TaskInfo
 }
 
-export default class FileSettings {
-	private tasks: TasksObject = {};
+type FileType = {
+	metadata: MetadataType,
+	json: object
+}
 
+export default class FileSettings {
 	static newFile(fileName: string = ''): Promise<FileSettings> {
 			const key: string = fileNameToKey(fileName);
 
@@ -72,22 +77,20 @@ export default class FileSettings {
 			} else if (fileName) {
 				return Neutralino.storage
 					.getData(key)
-					.then((str: string) => FileSettings.fromJSON(str))
-					.catch((err: Neutralino.Error) => {
-						if (err.code !== 'NE_ST_NOSTKEX') {
-							const errorMessage: string = 'Neutralino storage error: ' + err.message
-							toast.error(errorMessage);
-							throw new Error(errorMessage);
+					.then((str: string) => FileSettings.fromJSON(str, fileName))
+					.catch((err: any) => {
+						if (err.code || err.code === 'NE_ST_NOSTKEX') {
+							return new FileSettings(key);
 						}
 
-						return new FileSettings(key);
+						throw err;
 					});
 			} else {
 				return Promise.resolve(new FileSettings(key));
 			}
 	}
 
-	constructor(private key: string = '') { }
+	constructor(private key: string = '', private tasks: TasksObject = {}) { }
 
 	addDurationForTask(taskName: string, duration: PinnedDuration) {
 		const taskInfo = this.getTask(taskName);
@@ -126,7 +129,7 @@ export default class FileSettings {
 	public commit(): void {
 		if (this.key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
 			Neutralino.storage
-				.setData(this.key, JSON.stringify(this))
+				.setData(this.key, this.stringify())
 				.catch((err: Neutralino.Error) => toast.error('Neutralino storage set error: ' + err.message));
 		}
 	}
@@ -139,12 +142,108 @@ export default class FileSettings {
 		return this.allTaskNames.map(name => this.getTask(name));
 	}
 
-	public static fromJSON(str: string): FileSettings {
-		const obj: any = JSON.parse(str);
-		const result: any = new FileSettings(obj.key);
+	stringify() {
+		const defaultJson = JSON.stringify(this);
 
-		FileSettings.parseRecursive(obj, result);
+		const metadata = JSON.stringify(Metadata);
+		const metadataComment = `/* ${metadata} */`;
+		
+		return metadataComment + '\n' + defaultJson;
+	}
 
+	/**
+	 * Extracts the metadata from the file.
+	 * Since version 1, the file should start with a multiline comment
+	 * containing a JSON object. This is the file's metadata.
+	 * 
+	 * @param content The content of the file
+	 * @returns The metadata and the main json
+	 */
+	private static extractMetadata(content: string): FileType {
+		let index = 0;
+
+		// skip whitespace at start
+		while (content.charAt(index).match(/\s/g) !== null) {
+			index++;
+		}
+
+		
+		// if file does not start with a multiline comment
+		// then file is a legacy version 0
+		if (content.indexOf('/*') !== index) {
+			return { metadata: { version: 0 }, json: JSON.parse(content)};
+		}
+
+		const start = index + 2;
+		let end;
+
+		let nesting = 1; // increments for every /* inside
+		let valid = false; // whether we have found the right */
+
+		for (index = start + 1; index < content.length; index++) {
+			if (content.indexOf('/*') === index) {
+				nesting++;
+			} else if (content.indexOf('*/') === index) {
+				nesting--;
+				if (nesting === 0) { // we have found the matching */
+					end = index; // start and end should not contain the /* */
+					index += 2; // move index to after */
+					valid = true;
+					break;
+				}
+			}
+		}
+
+		// if reached the end of the file without finding the matching */
+		if (!valid) {
+			throw new Error("Could not parse metadata, file:" + content);
+		}
+
+
+		// skip whitespace and new lines after end
+		while (content.charAt(index).match(/(\s|\n)/g) !== null) {
+			index++;
+		}
+
+		try {
+			// try to parse the resulting string
+			return {
+				metadata: JSON.parse(content.substring(start, end)),
+				json: JSON.parse(content.substring(index))
+			}
+		} catch (e) {
+			console.error(e);
+			throw new Error("Could not parse metadata, file:" + content + "; error: " + e);
+		}
+	}
+
+	public static fromJSON(str: string, fileName: string): FileSettings {
+		const file = FileSettings.extractMetadata(str);
+		const fileVersion = file.metadata.version;
+		if (fileVersion !== Metadata.version) {
+			if (!Legacy[fileVersion]) {
+				throw new Error("invalid version in metadata: " + file.metadata);
+			}
+
+			if (fileVersion === 0) {
+				return Legacy[fileVersion].FileSettings.fromJSON(file.json, fileName);
+			} else {
+				// NOT TESTED !!
+				const oldSerializables = (window as any).serializables;
+				(window as any).serializables = Legacy[fileVersion];
+
+				try {
+					const result: any = new FileSettings();
+					FileSettings.parseRecursive(file.json, result);
+					return result;
+				} finally {
+					(window as any).serializables = oldSerializables;
+				}
+			}
+		}
+
+		const result: any = new FileSettings();
+		FileSettings.parseRecursive(file.json, result);
 		return result;
 	}
 
