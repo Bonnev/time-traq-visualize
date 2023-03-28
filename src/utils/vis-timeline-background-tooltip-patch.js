@@ -1,3 +1,5 @@
+/* eslint-disable no-var */
+
 export default function patchItemSet(util, timeline) {
 	timeline.components.ItemSet.prototype._onMouseOver = function(event) {
 		var item = this.itemFromTarget(event);
@@ -59,7 +61,7 @@ export default function patchItemSet(util, timeline) {
 		if (!item) {
 			var cur = event.target;
 			while (cur) {
-				if (Object.prototype.hasOwnProperty.call(cur,'timeline-item-background')) {
+				if (Object.prototype.hasOwnProperty.call(cur, 'timeline-item-background')) {
 					item = cur['timeline-item-background'];
 					break;
 				}
