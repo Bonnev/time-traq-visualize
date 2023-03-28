@@ -1,7 +1,28 @@
 import moment from 'moment';
 
-export class TimeAndDate {
-	_store : moment.Moment;
+export interface PrettyStringable {
+	toPrettyString(): string;
+}
+
+export interface TypedJson { type: string };
+export type TypedValue = { type: string, value: Json };
+export type Json = string | number | object | (string | number | object)[] | TypedJson | TypedValue;
+
+export interface Serializable {
+	toJSON(): Json;
+}
+
+export interface Deserializable {
+	fromJSON: Function;
+}
+
+(window as any).serializables ||= [];
+
+export class TimeAndDate implements PrettyStringable, Serializable {
+	static DEFAULT_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+	
+	public type: string = "TimeAndDate";
+	_store : moment.Moment = moment();
 	
 	static parse(value: string, format: string): TimeAndDate {
 		const time: TimeAndDate = new TimeAndDate();
@@ -35,15 +56,28 @@ export class TimeAndDate {
 		return this._store.isBefore(time._store);
 	}
 
-	toString(): string {
-		return this.format('YYYY-MM-DD HH:mm:ss');
+	toPrettyString(): string {
+		return String(this.toJSON().value);
+	}
+
+	toJSON(): TypedValue {
+		return {
+			type: this.type,
+			value: this.format(TimeAndDate.DEFAULT_FORMAT)
+		}
+	}
+
+	static fromJSON(str: string): TimeAndDate {
+		return TimeAndDate.parse(str, TimeAndDate.DEFAULT_FORMAT);
 	}
 }
+(window as any).serializables.TimeAndDate = TimeAndDate;
 
-export class Duration {
+export class Duration implements PrettyStringable, Serializable {
+	public type: string = "Duration";
 	protected _libDuration: moment.Duration;
 	
-	constructor(durationInMilliseconds: number) {
+	constructor(durationInMilliseconds?: number) {
 		this._libDuration = moment.duration(durationInMilliseconds);
 	}
 
@@ -63,45 +97,44 @@ export class Duration {
 		return new PinnedDuration(this.totalMilliseconds, time);
 	}
 
-	toString(): string {
-		return this._libDuration.toString();
+	toPrettyString(): string {
+		return String(this._libDuration.toString());
 	}
 
-	toJSON(): object {
-		return { duration: this.toString() };
+	toJSON(): TypedValue {
+		return {
+			type: this.type,
+			value: this._libDuration.toString()
+		};
 	}
 
-	static fromString(str: string): Duration {
-		const result: Duration = new Duration(null);
-		result._libDuration = moment.duration(str);
-		return result;
+	static fromJSON(str: string): Duration {
+		return new Duration(moment.duration(str).asMilliseconds());
 	}
 }
-
-export type DurationString = {
-	duration: string
-}
+(window as any).serializables.Duration = Duration;
 
 export class PinnedDuration extends Duration {
-	constructor(durationInMilliseconds: number, public startDate: TimeAndDate = null) {
+	public type: string = "PinnedDuration";
+
+	constructor(durationInMilliseconds: number, public startDate: TimeAndDate) {
 		super(durationInMilliseconds);
 	}
 
-	toJSON(): object {
-		const obj: any = super.toJSON();
-		obj.startDate = this.startDate.toString();
-		
-		return obj;
+	toPrettyString(): string {
+		return super.toPrettyString() + ' from ' + this.startDate.toPrettyString();
 	}
 
-	static fromStrings(duration: string, startDate: string): PinnedDuration {
-		const result: PinnedDuration = Duration.fromString(duration).withStartTime(null);
-		result.startDate = TimeAndDate.parse(startDate, "YYYY-MM-DD HH:mm:ss");
-		return result;
+	toJSON(): TypedValue {
+		return {
+			type: this.type,
+			value: super.toJSON().value + '_' + this.startDate.toJSON().value
+		};
+	}
+
+	static fromJSON(str: string): PinnedDuration {
+		const parts: string[] = str.split('_');
+		return Duration.fromJSON(parts[0]).withStartTime(TimeAndDate.fromJSON(parts[1]));
 	}
 }
-
-export type PinnedDurationString = {
-	duration: string,
-	startDate: string
-}
+(window as any).serializables.PinnedDuration = PinnedDuration;
