@@ -54,9 +54,9 @@ const Statistics = () => {
 			return <fieldset key={fileSettings.key}>
 				<legend className="collapsable" onClick={onLegendClick}>{fileSettings.key}</legend>
 				{fileSettings.allTasks.map(currentTask =>
-					<span key={currentTask.taskName} className="task">{`${currentTask.taskName}: ${currentTask.totalDuration.toString()}`}<br /></span>
+					<span key={currentTask.taskName} className="task">{`${currentTask.taskName}: ${currentTask.totalDuration.toPrettyString()}`}<br /></span>
 				).flat()}
-				<span className="total">Total: {grandTotalDuration.toString()}</span>
+				<span className="total">Total: {grandTotalDuration.toPrettyString()}</span>
 			</fieldset>;
 		});
 
@@ -66,7 +66,7 @@ const Statistics = () => {
 			<fieldset key="totals">
 				<legend>Totals</legend>
 				{Object.entries(accumulatedStatistics).sort(totalsAtEnd).map(([taskName, totalDuration]) =>
-					<span key={taskName} className="task">{`${taskName}: ${totalDuration.toString()}`}<br /></span>)}
+					<span key={taskName} className="task">{`${taskName}: ${totalDuration.toPrettyString()}`}<br /></span>)}
 			</fieldset>
 		);
 

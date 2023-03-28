@@ -15,7 +15,7 @@ import { randomColor, randomColorRGBA } from '../utils/colorUtils.ts';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 import usePrevValue from '../utils/usePrevValue.ts';
 import FileSettings from '../utils/FileSettings.ts';
-import { TimeAndDate } from '../utils/dateTimeUtils.ts';
+import { TimeAndDate, Duration } from '../utils/dateTimeUtils.ts';
 import { setAsyncTimeout } from '../utils/callbackPromise.ts';
 
 patchItemSet(vis.util, vis.timeline);
@@ -539,10 +539,14 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	}, [setStatisticsPopupOpen]);
 
 	const getBackgroundStatistics = () => {
-		return fileSettings.current.allTaskNames.map(taskName => {
+		let total = new Duration(0);
+		return <div>{fileSettings.current.allTaskNames.map(taskName => {
 			const currentTask = fileSettings.current.getTask(taskName);
+			total = total.add(currentTask.totalDuration);
 			return <Fragment key={currentTask.taskName}>{currentTask.taskName + `: ${currentTask.totalDuration.toPrettyString()}`}<br /></Fragment>;
-		});
+		})}
+		Total: {total.toPrettyString()}<br />
+		</div>;
 	};
 
 	return (<>
