@@ -1,9 +1,9 @@
 /// <reference path="../definitions/neutralino.d.ts" />
 
 import { toast } from 'react-toastify';
+import { SETTINGS_NAME } from './AppSettings';
 import { Duration, PinnedDuration } from './dateTimeUtils';
-import Legacy from './legacyUtils';
-import Metadata, { MetadataType } from './SettingsMetadata';
+import {  MetadataBase, parseStorageObject, stringifyStorageObject } from './storageUtils';
 
 const fileNameToKey = (fileName: string): string => fileName
 	.substring(0, fileName.lastIndexOf('.'))
@@ -61,33 +61,42 @@ type TasksObject = {
 	[key: string]: TaskInfo
 }
 
-type FileType = {
-	metadata: MetadataType,
-	json: object
-}
+interface FileSettingsMetadataType extends MetadataBase {
+	version: number
+};
+
+const FileSettingsMetadata: FileSettingsMetadataType = {
+	version: 1
+};
 
 export default class FileSettings {
+	static Metadata = FileSettingsMetadata;
+
 	static newFile(fileName: string = ''): Promise<FileSettings> {
-			const key: string = fileNameToKey(fileName);
+		if (fileName === SETTINGS_NAME) {
+			Promise.reject(new Error('File name cannot be set to ' + SETTINGS_NAME));
+		}
 
-			if (fileName && !key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
-				const errorMessage: string = `Key ${key} doesn't match the storage pattern '${NEUTRALINO_STORAGE_KEY_PATTERN}' 😧`;
-				toast.error(errorMessage);
-				throw new Error(errorMessage);
-			} else if (fileName) {
-				return Neutralino.storage
-					.getData(key)
-					.then((str: string) => FileSettings.fromJSON(str, fileName))
-					.catch((err: any) => {
-						if (err.code || err.code === 'NE_ST_NOSTKEX') {
-							return new FileSettings(key);
-						}
+		const key: string = fileNameToKey(fileName);
 
-						throw err;
-					});
-			} else {
-				return Promise.resolve(new FileSettings(key));
-			}
+		if (fileName && !key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
+			const errorMessage: string = `Key ${key} doesn't match the storage pattern '${NEUTRALINO_STORAGE_KEY_PATTERN}' 😧`;
+			toast.error(errorMessage);
+			throw new Error(errorMessage);
+		} else if (fileName) {
+			return Neutralino.storage
+				.getData(key)
+				.then((str: string) => FileSettings.fromJSON(str, fileName))
+				.catch((err: any) => {
+					if (err.code || err.code === 'NE_ST_NOSTKEX') {
+						return new FileSettings(key);
+					}
+
+					throw err;
+				});
+		} else {
+			return Promise.resolve(new FileSettings(key));
+		}
 	}
 
 	constructor(private key: string = '', private tasks: TasksObject = {}) { }
@@ -129,7 +138,7 @@ export default class FileSettings {
 	public commit(): void {
 		if (this.key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
 			Neutralino.storage
-				.setData(this.key, this.stringify())
+				.setData(this.key, stringifyStorageObject(FileSettings, this))
 				.catch((err: Neutralino.Error) => toast.error('Neutralino storage set error: ' + err.message));
 		}
 	}
@@ -142,148 +151,7 @@ export default class FileSettings {
 		return this.allTaskNames.map(name => this.getTask(name));
 	}
 
-	stringify() {
-		const defaultJson = JSON.stringify(this);
-
-		const metadata = JSON.stringify(Metadata);
-		const metadataComment = `/* ${metadata} */`;
-		
-		return metadataComment + '\n' + defaultJson;
-	}
-
-	/**
-	 * Extracts the metadata from the file.
-	 * Since version 1, the file should start with a multiline comment
-	 * containing a JSON object. This is the file's metadata.
-	 * 
-	 * @param content The content of the file
-	 * @returns The metadata and the main json
-	 */
-	private static extractMetadata(content: string): FileType {
-		let index = 0;
-
-		// skip whitespace at start
-		while (content.charAt(index).match(/\s/g) !== null) {
-			index++;
-		}
-
-		
-		// if file does not start with a multiline comment
-		// then file is a legacy version 0
-		if (content.indexOf('/*') !== index) {
-			return { metadata: { version: 0 }, json: JSON.parse(content)};
-		}
-
-		const start = index + 2;
-		let end;
-
-		let nesting = 1; // increments for every /* inside
-		let valid = false; // whether we have found the right */
-
-		for (index = start + 1; index < content.length; index++) {
-			if (content.indexOf('/*') === index) {
-				nesting++;
-			} else if (content.indexOf('*/') === index) {
-				nesting--;
-				if (nesting === 0) { // we have found the matching */
-					end = index; // start and end should not contain the /* */
-					index += 2; // move index to after */
-					valid = true;
-					break;
-				}
-			}
-		}
-
-		// if reached the end of the file without finding the matching */
-		if (!valid) {
-			throw new Error("Could not parse metadata, file:" + content);
-		}
-
-
-		// skip whitespace and new lines after end
-		while (content.charAt(index).match(/(\s|\n)/g) !== null) {
-			index++;
-		}
-
-		try {
-			// try to parse the resulting string
-			return {
-				metadata: JSON.parse(content.substring(start, end)),
-				json: JSON.parse(content.substring(index))
-			}
-		} catch (e) {
-			console.error(e);
-			throw new Error("Could not parse metadata, file:" + content + "; error: " + e);
-		}
-	}
-
-	public static fromJSON(str: string, fileName: string): FileSettings {
-		const file = FileSettings.extractMetadata(str);
-		const fileVersion = file.metadata.version;
-		if (fileVersion !== Metadata.version) {
-			if (!Legacy[fileVersion]) {
-				throw new Error("invalid version in metadata: " + file.metadata);
-			}
-
-			if (fileVersion === 0) {
-				return Legacy[fileVersion].FileSettings.fromJSON(file.json, fileName);
-			} else {
-				// NOT TESTED !!
-				const oldSerializables = (window as any).serializables;
-				(window as any).serializables = Legacy[fileVersion];
-
-				try {
-					const result: any = new FileSettings();
-					FileSettings.parseRecursive(file.json, result);
-					return result;
-				} finally {
-					(window as any).serializables = oldSerializables;
-				}
-			}
-		}
-
-		const result: any = new FileSettings();
-		FileSettings.parseRecursive(file.json, result);
-		return result;
-	}
-
-	/**
-	 * Sets all fields from the given object to the given result.
-	 * 
-	 * If any value is an object with a "type" field, the class'es fromJSON method is called
-	 * to transform the whole value. If the value also has a "value" field, only its value is transformed.
-	 * 
-	 * @param obj (any object) The source object
-	 * @param result (any object or array) The destination object
-	 */
-	private static parseRecursive(obj: any, result: any = {}) {
-		for (const property in obj) {
-			if (!obj.hasOwnProperty(property)) {
-				continue;
-			}
-			
-			if (typeof obj[property] !== 'object') {
-				result[property] = obj[property];
-			} else {
-				// check if value has a custom class to parse from
-				if (obj[property].type) {
-					// check if only the value needs to be 
-					if (obj[property].value) {
-						result[property] = (window as any).serializables[obj[property].type].fromJSON(obj[property].value);
-					} else {
-						result[property] = (window as any).serializables[obj[property].type].fromJSON(obj[property]);
-					}
-				} else {
-					if (Array.isArray(obj[property])) {
-						result[property] = [];
-					} else {
-						result[property] = {};
-					}
-					FileSettings.parseRecursive(obj[property], result[property]);
-				}
-			}
-		}
-
-		return result;
+	static fromJSON(str: string, fileName: string) {
+		return parseStorageObject(FileSettings, str, fileName)
 	}
 };

@@ -1,5 +1,6 @@
-import { TimeAndDate, Duration, PinnedDuration, Deserializable } from "./dateTimeUtils";
+import { TimeAndDate, Duration, PinnedDuration } from "./dateTimeUtils";
 import FileSettings, { TaskInfo} from "./FileSettings";
+import { Deserializable } from "./storageUtils";
 
 const TIME_AND_DATE_DEFAULT_FORMAT0 = 'YYYY-MM-DD HH:mm:ss';
 

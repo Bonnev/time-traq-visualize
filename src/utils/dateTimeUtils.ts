@@ -1,20 +1,5 @@
 import moment from 'moment';
-
-export interface PrettyStringable {
-	toPrettyString(): string;
-}
-
-export interface TypedJson { type: string };
-export type TypedValue = { type: string, value: Json };
-export type Json = string | number | object | (string | number | object)[] | TypedJson | TypedValue;
-
-export interface Serializable {
-	toJSON(): Json;
-}
-
-export interface Deserializable {
-	fromJSON: Function;
-}
+import { PrettyStringable, Serializable, TypedValue } from './storageUtils';
 
 (window as any).serializables ||= [];
 

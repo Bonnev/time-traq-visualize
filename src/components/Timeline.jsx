@@ -15,6 +15,7 @@ import { randomColor, randomColorRGBA } from '../utils/colorUtils.ts';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
 import usePrevValue from '../utils/usePrevValue.ts';
 import FileSettings from '../utils/FileSettings.ts';
+import AppSettings from '../utils/AppSettings';
 import { TimeAndDate, Duration } from '../utils/dateTimeUtils.ts';
 import { setAsyncTimeout } from '../utils/callbackPromise.ts';
 
@@ -35,7 +36,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	const forceUpdate = useCallback(() => updateState({}), []);
 
 	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
-	const [allGroups, setAllGroups] = useState();
+	const allGroups = useRef();
 	const nonHiddenGroups = useRef([]);
 
 	const timeline = useRef();
@@ -44,6 +45,8 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	const items = useRef([]);
 	const backgroundsByTask = useRef({});
 	const fileSettings = useRef(new FileSettings());
+
+	const [appSettings, setAppSettings] = useState();
 
 	const prevFileName = usePrevValue(fileName);
 	const prevDataProp = usePrevValue(dataProp);
@@ -55,7 +58,65 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	// const nextDate = '2022-04-08';
 
 	useEffect(() => {
-		if (nagLines.length && allGroups) {
+		if (!appSettings) {
+			AppSettings.loadSettings().then(settings => {
+				setAppSettings(settings);
+			});
+		}
+	}, [appSettings]);
+
+	const hideGroups = useCallback(groups => {
+		if (!allGroups.current) {
+			return;
+		}
+
+		const groupIds = groups.map(g => g.id);
+
+		// nested groups can't be hidden if they are not expanded
+		// hide the top-level group first, then nested will show
+		allGroups.current.update(groupIds.map(gid => ({ id: gid, visible: false })));
+		nonHiddenGroups.current = nonHiddenGroups.current.filter(g => !groupIds.includes(g));
+
+		// then hide also the nested ones
+		const nestedGroups = groups.map(g => g.nestedGroups && g.nestedGroups.length ? g.nestedGroups : []).flat();
+		if (nestedGroups && nestedGroups.length) {
+			nonHiddenGroups.current = nonHiddenGroups.current.filter(g => !nestedGroups.includes(g));
+			setTimeout(() =>
+				allGroups.current.update(nestedGroups.map(g => ({ id: g, visible: false }))),
+			10);
+		}
+	}, []);
+
+	const groupTemplate = useCallback((group) => {
+		if (!group) return null;
+		const container = document.createElement('div');
+		
+		const label = document.createElement('span');
+		label.innerHTML = group.content + ' ';
+		container.insertAdjacentElement('afterBegin', label);
+		
+		const hide = document.createElement('button');
+		hide.innerHTML = 'Hide';
+		hide.style.fontSize = 'small';
+		hide.addEventListener('click', function () {
+			hideGroups([group]);
+		});
+		container.insertAdjacentElement('beforeEnd', hide);
+		
+		const alwaysHide = document.createElement('button');
+		alwaysHide.innerHTML = 'Always hide';
+		alwaysHide.style.fontSize = 'small';
+		alwaysHide.addEventListener('click', function () {
+			appSettings.addGroupToAlwaysHide(group.content);
+			hideGroups([group]);
+		});
+		container.insertAdjacentElement('beforeEnd', alwaysHide);
+		
+		return container;
+	}, [appSettings, hideGroups]);
+
+	useEffect(() => {
+		if (nagLines.length && allGroups.current) {
 			const stylesByTask = {};
 			const nagItems = [];
 			let currentItemStartDate;
@@ -110,12 +171,12 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				style: `background-color: ${item.color}`
 			}));
 
-			setTimeout(() => allGroups.update({
+			setTimeout(() => allGroups.current.update({
 				id: NAGS_GROUP_ID,
 				visible: true
 			}), 10);
 		}
-	}, [nagLines, allGroups]);
+	}, [nagLines]);
 
 	const timelineDivContextMenuHandler = useCallback((e) => {
 		e.preventDefault();
@@ -235,7 +296,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		const subgroupsMap = new Map();
 		const subgroupsItemsMap = new Map();
 		let subgroups = data.map((u, id) => ({
-			id: id,
+			id: 'subgroup' + id,
 			content: u.content,
 			treeLevel: 2,
 			process: u.process,
@@ -250,7 +311,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		const groupsMap = new Map();
 		const groups = unique.map((u, id) => ({
-			id: id + subgroups[subgroups.length - 1].id + 1,
+			id: 'group' + id + subgroups[subgroups.length - 1].id + 1,
 			content: u.process,
 			nestedGroups: subgroupsMap.get(u.process) || undefined,
 			showNested: false,
@@ -335,9 +396,8 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		dataset = dataset.concat(endBackgrounds);
 		items.current = new DataSet(dataset);
 
-		const allGroups = new DataSet(groups.concat(subgroups));
-		setAllGroups(allGroups);
-		nonHiddenGroups.current = allGroups.getIds();
+		allGroups.current = new DataSet(groups.concat(subgroups));
+		nonHiddenGroups.current = allGroups.current.getIds();
 
 		// Configuration for the Timeline
 		const options = {
@@ -348,31 +408,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			},
 			orientation: 'both',
 			multiselect: true,
-			groupTemplate: function (group) {
-				if (!group) return null;
-				const container = document.createElement('div');
-				const label = document.createElement('span');
-				label.innerHTML = group.content + ' ';
-				container.insertAdjacentElement('afterBegin', label);
-				const hide = document.createElement('button');
-				hide.innerHTML = 'hide';
-				hide.style.fontSize = 'small';
-				hide.addEventListener('click', function () {
-					// nested groups can't be hidden if they are not expanded
-					// hide the top-level group first, then nested will show
-					allGroups.update({ id: group.id, visible: false });
-					nonHiddenGroups.current = nonHiddenGroups.current.filter(g => g !== group.id);
-					// then hide also the nested ones
-					if (group.nestedGroups && group.nestedGroups.length) {
-						nonHiddenGroups.current = nonHiddenGroups.current.filter(g => !group.nestedGroups.includes(g));
-						setTimeout(() =>
-							allGroups.update(group.nestedGroups.map(g => ({ id: g, visible: false }))),
-						10);
-					}
-				});
-				container.insertAdjacentElement('beforeEnd', hide);
-				return container;
-			},
+			groupTemplate: groupTemplate,
 		};
 
 		timeline.current && timeline.current.destroy();
@@ -381,7 +417,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		window.timeline = timelineLocal;
 
-		timelineLocal.setGroups(allGroups);
+		timelineLocal.setGroups(allGroups.current);
 
 		timelineLocal.on('doubleClick', function (properties) {
 			const eventProps = timeline.current.getEventProperties(properties.event);
@@ -469,7 +505,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				document.documentElement.classList.add('wait')
 			).thenCallback(0, () => // trigger repaint
 				// show all non-hidden groups in order to check which items are visible
-				allGroups.update(nonHiddenGroups.current.map(g => ({ id: g, visible: true })))
+				allGroups.current.update(nonHiddenGroups.current.map(g => ({ id: g, visible: true })))
 			).thenCallback(10, () => { // trigger repaint
 				// get all visible items so that we can hide all groups that have no visible items
 				let items = timelineLocal.getVisibleItems();
@@ -478,7 +514,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				const visibleGroupIds = new Set(items.map(item => timelineLocal.itemsData.get(item).group));
 				const invisibleGroupIds = nonHiddenGroups.current.filter(group => !visibleGroupIds.has(group));
 
-				allGroups.update(invisibleGroupIds.map(g => ({ id: g, visible: false })));
+				allGroups.current.update(invisibleGroupIds.map(g => ({ id: g, visible: false })));
 				document.documentElement.classList.remove('wait'); // revert cursor to default
 			});
 		});
@@ -492,17 +528,29 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		timeline.current = timelineLocal;
 	}, [fileData]);
 
-	const showAllGroups = useCallback(() => {
-		const nestedIds = allGroups.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
-		const groupIds = allGroups.map(gr => gr).filter(gr => gr.nestedGroups).map(gr => gr.id);
+	useEffect(() => {
+		if (allGroups.current && appSettings) {
+			const topIds = allGroups.current.getIds();
+			const topGroups = topIds
+				.map(topId => allGroups.current.get(topId))
+				.filter(group => group.id.startsWith && group.id.startsWith('group'))
+				.filter(group => appSettings.getAlwaysHideGroups().includes(group.content));
 
-		allGroups.update(nestedIds.map(g => ({ id: g, visible: true })));
+			hideGroups(topGroups);
+		}
+	}, [allGroups.current, appSettings]);
+
+	const showAllGroups = useCallback(() => {
+		const nestedIds = allGroups.current.map(gr => gr).filter(gr => !gr.nestedGroups).map(gr => gr.id);
+		const groupIds = allGroups.current.map(gr => gr).filter(gr => gr.nestedGroups).map(gr => gr.id);
+
+		allGroups.current.update(nestedIds.map(g => ({ id: g, visible: true })));
 
 		setTimeout(() => {
-			allGroups.update(groupIds.map(g => ({ id: g, visible: true, showNested: false })));
+			allGroups.current.update(groupIds.map(g => ({ id: g, visible: true, showNested: false })));
 		},
 		10);
-	}, [allGroups]);
+	}, []);
 
 	const taskInputHandler = useCallback((event) => {
 		task.current = event.target.value;
@@ -545,7 +593,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			total = total.add(currentTask.totalDuration);
 			return <Fragment key={currentTask.taskName}>{currentTask.taskName + `: ${currentTask.totalDuration.toPrettyString()}`}<br /></Fragment>;
 		})}
-		Total: {total.toPrettyString()}<br />
+			Total: {total.toPrettyString()}<br />
 		</div>;
 	};
 
@@ -561,7 +609,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 					<option key={taskName} value={taskName} />
 				)}
 			</datalist>
-			<button type="button" onClick={showAllGroups}>Show all groups</button>
+			<button type="button" onClick={showAllGroups.current}>Show all groups</button>
 		</div>
 		<div id='visualization' />
 		<ControlledMenu {...menuProps} anchorPoint={anchorPoint}
