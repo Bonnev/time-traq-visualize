@@ -12,7 +12,7 @@ const fileNameToKey = (fileName: string): string => fileName
 /**
  * ^[a-zA-Z-_0-9]{1,50}$
  */
-const NEUTRALINO_STORAGE_KEY_PATTERN: RegExp = /^[a-zA-Z-_0-9]{1,50}$/;
+const NEUTRALINO_STORAGE_KEY_PATTERN = /^[a-zA-Z-_0-9]{1,50}$/;
 
 export class TaskInfo {
 	pinnedDurations: PinnedDuration[] = [];
@@ -34,11 +34,11 @@ export class TaskInfo {
 
 	removePinnedDurationAtTime(time: string): TaskInfo {
 		const index = this.pinnedDurations.findIndex(dur => dur.startDate.format('HH:mm:ss') === time);
-		
+
 		if (index > -1) {
 			this.pinnedDurations.splice(index, 1);
 		}
-		
+
 		this.recalculateDuration();
 
 		return this;
@@ -63,7 +63,7 @@ type TasksObject = {
 
 interface FileSettingsMetadataType extends MetadataBase {
 	version: number
-};
+}
 
 const FileSettingsMetadata: FileSettingsMetadataType = {
 	version: 1
@@ -72,7 +72,7 @@ const FileSettingsMetadata: FileSettingsMetadataType = {
 export default class FileSettings {
 	static Metadata = FileSettingsMetadata;
 
-	static newFile(fileName: string = ''): Promise<FileSettings> {
+	static newFile(fileName = ''): Promise<FileSettings> {
 		if (fileName === SETTINGS_NAME) {
 			Promise.reject(new Error('File name cannot be set to ' + SETTINGS_NAME));
 		}
@@ -80,14 +80,14 @@ export default class FileSettings {
 		const key: string = fileNameToKey(fileName);
 
 		if (fileName && !key.match(NEUTRALINO_STORAGE_KEY_PATTERN)) {
-			const errorMessage: string = `Key ${key} doesn't match the storage pattern '${NEUTRALINO_STORAGE_KEY_PATTERN}' 😧`;
+			const errorMessage = `Key ${key} doesn't match the storage pattern '${NEUTRALINO_STORAGE_KEY_PATTERN}' 😧`;
 			toast.error(errorMessage);
 			throw new Error(errorMessage);
 		} else if (fileName) {
 			return Neutralino.storage
 				.getData(key)
 				.then((str: string) => FileSettings.fromJSON(str, fileName))
-				.catch((err: any) => {
+				.catch(err => {
 					if (err.code || err.code === 'NE_ST_NOSTKEX') {
 						return new FileSettings(key);
 					}
@@ -152,6 +152,6 @@ export default class FileSettings {
 	}
 
 	static fromJSON(str: string, fileName: string) {
-		return parseStorageObject(FileSettings, str, fileName)
+		return parseStorageObject(FileSettings, str, fileName);
 	}
-};
+}

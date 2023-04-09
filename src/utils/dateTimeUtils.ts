@@ -5,10 +5,10 @@ import { PrettyStringable, Serializable, TypedValue } from './storageUtils';
 
 export class TimeAndDate implements PrettyStringable, Serializable {
 	static DEFAULT_FORMAT = 'YYYY-MM-DD HH:mm:ss';
-	
-	public type: string = "TimeAndDate";
+
+	public type = 'TimeAndDate';
 	_store : moment.Moment = moment();
-	
+
 	static parse(value: string, format: string): TimeAndDate {
 		const time: TimeAndDate = new TimeAndDate();
 
@@ -59,9 +59,9 @@ export class TimeAndDate implements PrettyStringable, Serializable {
 (window as any).serializables.TimeAndDate = TimeAndDate;
 
 export class Duration implements PrettyStringable, Serializable {
-	public type: string = "Duration";
+	public type = 'Duration';
 	protected _libDuration: moment.Duration;
-	
+
 	constructor(durationInMilliseconds?: number) {
 		this._libDuration = moment.duration(durationInMilliseconds);
 	}
@@ -100,7 +100,7 @@ export class Duration implements PrettyStringable, Serializable {
 (window as any).serializables.Duration = Duration;
 
 export class PinnedDuration extends Duration {
-	public type: string = "PinnedDuration";
+	public type = 'PinnedDuration';
 
 	constructor(durationInMilliseconds: number, public startDate: TimeAndDate) {
 		super(durationInMilliseconds);

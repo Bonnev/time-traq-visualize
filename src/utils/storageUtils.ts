@@ -1,10 +1,10 @@
-import Legacy from "./legacyUtils";
+import Legacy from './legacyUtils';
 
 export interface PrettyStringable {
 	toPrettyString(): string;
 }
 
-export interface TypedJson { type: string };
+export interface TypedJson { type: string }
 export type TypedValue = { type: string, value: Json };
 export type Json = string | number | object | (string | number | object)[] | TypedJson | TypedValue;
 
@@ -35,40 +35,9 @@ export const stringifyStorageObject = <T>(Type: DeserializableTopLevel<T>, obj: 
 
 	const metadata = JSON.stringify(Type.Metadata);
 	const metadataComment = `/* ${metadata} */`;
-	
+
 	return metadataComment + '\n' + defaultJson;
-}
-
-export const parseStorageObject = <T>(Type: DeserializableTopLevel<T>, str: string, fileName?: string | undefined): T => {
-	const file = extractMetadata(str);
-	const fileVersion = file.metadata.version;
-	if (fileVersion !== Type.Metadata.version) {
-		if (!Legacy[fileVersion]) {
-			throw new Error("invalid version in metadata: " + file.metadata);
-		}
-
-		if (fileVersion === 0) {
-			const typeName = Type.name.startsWith('_') ? Type.name.substring(1) : Type.name;
-			return Legacy[fileVersion][typeName].fromJSON(file.json, fileName);
-		} else {
-			// NOT TESTED !!
-			const oldSerializables = (window as any).serializables;
-			(window as any).serializables = Legacy[fileVersion];
-
-			try {
-				const result: any = new Type();
-				parseStorageObjectRecursive(file.json, result);
-				return result;
-			} finally {
-				(window as any).serializables = oldSerializables;
-			}
-		}
-	}
-
-	const result: any = new Type();
-	parseStorageObjectRecursive(file.json, result);
-	return result;
-}
+};
 
 /**
 	 * Extracts the metadata from the file.
@@ -86,7 +55,6 @@ const extractMetadata = (content: string): FileType => {
 		index++;
 	}
 
-	
 	// if file does not start with a multiline comment
 	// then file is a legacy version 0
 	if (content.indexOf('/*') !== index) {
@@ -115,7 +83,7 @@ const extractMetadata = (content: string): FileType => {
 
 	// if reached the end of the file without finding the matching */
 	if (!valid) {
-		throw new Error("Could not parse metadata, file:" + content);
+		throw new Error('Could not parse metadata, file: ' + content);
 	}
 
 
@@ -129,12 +97,12 @@ const extractMetadata = (content: string): FileType => {
 		return {
 			metadata: JSON.parse(content.substring(start, end)),
 			json: JSON.parse(content.substring(index))
-		}
+		};
 	} catch (e) {
 		console.error(e);
-		throw new Error("Could not parse metadata, file:" + content + "; error: " + e);
+		throw new Error('Could not parse metadata, file: ' + content + '; error: ' + e);
 	}
-}
+};
 
 /**
  * Sets all fields from the given object to the given result.
@@ -147,16 +115,16 @@ const extractMetadata = (content: string): FileType => {
  */
 const parseStorageObjectRecursive = (obj: any, result: any = {}) => {
 	for (const property in obj) {
-		if (!obj.hasOwnProperty(property)) {
+		if (!Object.prototype.hasOwnProperty.call(obj, property)) {
 			continue;
 		}
-		
+
 		if (typeof obj[property] !== 'object') {
 			result[property] = obj[property];
 		} else {
 			// check if value has a custom class to parse from
 			if (obj[property].type) {
-				// check if only the value needs to be 
+				// check if only the value needs to be used
 				if (obj[property].value) {
 					result[property] = (window as any).serializables[obj[property].type].fromJSON(obj[property].value);
 				} else {
@@ -174,4 +142,35 @@ const parseStorageObjectRecursive = (obj: any, result: any = {}) => {
 	}
 
 	return result;
-}
+};
+
+export const parseStorageObject = <T>(Type: DeserializableTopLevel<T>, str: string, fileName?: string | undefined): T => {
+	const file = extractMetadata(str);
+	const fileVersion = file.metadata.version;
+	if (fileVersion !== Type.Metadata.version) {
+		if (!Legacy[fileVersion]) {
+			throw new Error('invalid version in metadata: ' + file.metadata);
+		}
+
+		if (fileVersion === 0) {
+			const typeName = Type.name.startsWith('_') ? Type.name.substring(1) : Type.name;
+			return Legacy[fileVersion][typeName].fromJSON(file.json, fileName);
+		} else {
+			// NOT TESTED !!
+			const oldSerializables = (window as any).serializables;
+			(window as any).serializables = Legacy[fileVersion];
+
+			try {
+				const result: any = new Type();
+				parseStorageObjectRecursive(file.json, result);
+				return result;
+			} finally {
+				(window as any).serializables = oldSerializables;
+			}
+		}
+	}
+
+	const result: T = new Type();
+	parseStorageObjectRecursive(file.json, result);
+	return result;
+};

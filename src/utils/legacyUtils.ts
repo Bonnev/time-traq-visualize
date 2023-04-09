@@ -1,6 +1,6 @@
-import { TimeAndDate, Duration, PinnedDuration } from "./dateTimeUtils";
-import FileSettings, { TaskInfo} from "./FileSettings";
-import { Deserializable } from "./storageUtils";
+import { TimeAndDate, Duration, PinnedDuration } from './dateTimeUtils';
+import FileSettings, { TaskInfo} from './FileSettings';
+import { Deserializable } from './storageUtils';
 
 const TIME_AND_DATE_DEFAULT_FORMAT0 = 'YYYY-MM-DD HH:mm:ss';
 
@@ -51,16 +51,16 @@ legacy[0] = {
 			const fileNameToKey = (fileName: string): string => fileName
 				.substring(0, fileName.lastIndexOf('.'))
 				.replaceAll('.', '_');
-	
+
 			const key = fileNameToKey(fileName);
-	
+
 			const tasks = (Object.values(content.tasks) as any[])
 				.map(taskInfoString => legacy[0].TaskInfo.fromJSON(taskInfoString))
 				.reduce((accumulator: object, taskInfo: TaskInfo, ) => ({...accumulator, [taskInfo.taskName]: taskInfo }), {});
-	
+
 			return new FileSettings(key, tasks);
 		}
 	}
-}
+};
 
 export default legacy;

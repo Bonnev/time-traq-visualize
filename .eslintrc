@@ -1,9 +1,12 @@
 {
 	"extends": [
 		"eslint:recommended",
+		"plugin:@typescript-eslint/recommended",
 		"plugin:react/recommended",
 		"plugin:react-hooks/recommended"
 	],
+	"parser": "@typescript-eslint/parser",
+	"plugins": ["@typescript-eslint"],
 	"env": {
 		"browser": true,
 		"es2021": true
@@ -109,7 +112,7 @@
 		"react/jsx-closing-bracket-location": ["warn", "after-props"],
 		"react/jsx-curly-brace-presence": ["warn", { "props": "never", "children": "never", "propElementValues": "never" }],
 		"react/jsx-equals-spacing": ["warn", "never"],
-		"react/jsx-filename-extension": ["error", { "allow": "as-needed" }],
+		"react/jsx-filename-extension": ["error", { "extensions": [".js", ".jsx", ".ts", ".tsx"] }],
 		"react/jsx-fragments": ["warn", "syntax"],
 		"react/jsx-no-bind": "warn",
 		"react/jsx-no-constructed-context-values": "warn",
@@ -120,6 +123,8 @@
 		"react/jsx-props-no-multi-spaces": "warn",
 		"react/jsx-tag-spacing": "warn",
 		"no-var": "warn",
-		"comma-spacing": "warn"
+		"comma-spacing": "warn",
+		"no-restricted-globals": ["warn", "window"],
+		"@typescript-eslint/triple-slash-reference": 0
 	}
 }

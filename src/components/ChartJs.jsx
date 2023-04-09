@@ -42,7 +42,7 @@ const ChartJs = ({ data }) => {
 			}
 		});
 
-		unique.sort((a,b)=> b.number - a.number);
+		unique.sort((a, b)=> b.number - a.number);
 
 		const dataForChart = {
 			labels: unique.map(u => u.label.substring(u.label.lastIndexOf('\\') + 1)),

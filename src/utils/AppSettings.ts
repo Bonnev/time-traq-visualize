@@ -1,4 +1,4 @@
-import { MetadataBase, parseStorageObject, stringifyStorageObject } from "./storageUtils";
+import { MetadataBase, parseStorageObject, stringifyStorageObject } from './storageUtils';
 
 import { toast } from 'react-toastify';
 
@@ -6,7 +6,7 @@ export const SETTINGS_NAME = 'settings';
 
 interface AppSettingsMetadataType extends MetadataBase {
 	version: number
-};
+}
 
 const AppSettingsMetadata: AppSettingsMetadataType = {
 	version: 1
@@ -21,7 +21,7 @@ export default class AppSettings {
 		return Neutralino.storage
 			.getData(SETTINGS_NAME)
 			.then((str: string) => AppSettings.fromJSON(str))
-			.catch((err: any) => {
+			.catch(err => {
 				if (err.code || err.code === 'NE_ST_NOSTKEX') {
 					return new AppSettings();
 				}
@@ -50,6 +50,6 @@ export default class AppSettings {
 
 
 	static fromJSON(str: string) {
-		return parseStorageObject(AppSettings, str)
+		return parseStorageObject(AppSettings, str);
 	}
 }

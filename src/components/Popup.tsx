@@ -1,6 +1,6 @@
 
-import React, { Component, PropsWithChildren } from 'react';
-import { useEffect, useState, useCallback, Fragment, FC } from 'react';
+import React, { PropsWithChildren } from 'react';
+import { FC } from 'react';
 import ReactModal from 'react-modal-resizable-draggable';
 
 type PopupProps = {
@@ -13,21 +13,19 @@ type PopupProps = {
 	isOpen: boolean
 };
 
-const Popup: FC<PropsWithChildren<PopupProps>> = (props) => {
-	return (<>
-		<ReactModal
-			top={props.top}
-			left={props.left}
-			initWidth={props.initialWidth}
-			initHeight={props.initialHeight}
-			disableKeystroke
-			isOpen={props.isOpen}
-			onRequestClose={props.onClose}
-			className={props.className}>
+const Popup: FC<PropsWithChildren<PopupProps>> = ({ top, left, initialWidth, initialHeight, isOpen, onClose, className, children }) => {
+	return (<ReactModal
+		top={top}
+		left={left}
+		initWidth={initialWidth}
+		initHeight={initialHeight}
+		disableKeystroke
+		isOpen={isOpen}
+		onRequestClose={onClose}
+		className={className}>
 
-			{props.children}
-		</ReactModal>
-	</>)
-}
+		{children}
+	</ReactModal>);
+};
 
 export default Popup;
