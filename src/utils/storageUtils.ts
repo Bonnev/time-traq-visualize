@@ -127,8 +127,11 @@ const parseStorageObjectRecursive = (obj: any, result: any = {}) => {
 				// check if only the value needs to be used
 				if (obj[property].value) {
 					result[property] = (window as any).serializables[obj[property].type].fromJSON(obj[property].value);
-				} else {
+				} else if ((window as any).serializables[obj[property].type].fromJSON) {
 					result[property] = (window as any).serializables[obj[property].type].fromJSON(obj[property]);
+				} else {
+					result[property] = new (window as any).serializables[obj[property].type];
+					parseStorageObjectRecursive(obj[property], result[property]);
 				}
 			} else {
 				if (Array.isArray(obj[property])) {

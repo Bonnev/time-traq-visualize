@@ -56,6 +56,7 @@ export class TaskInfo {
 	// 	return result;
 	// }
 }
+(window as any).serializables.TaskInfo = TaskInfo;
 
 type TasksObject = {
 	[key: string]: TaskInfo
