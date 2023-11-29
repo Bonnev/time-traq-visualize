@@ -10,14 +10,18 @@ import 'react-toastify/dist/ReactToastify.min.css';
 import Statistics from './Statistics.jsx';
 import Popup from './Popup';
 
+import usePrevValue from '../utils/usePrevValue.ts';
+
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
 const App = () => {
 	const [showChart, setShowChart] = useState('timeline');
 	const [fileData, setFileData] = useState({ data:[] });
+	const prevFileData = usePrevValue(fileData);
 	const [nagLines, setNagLines] = useState([]);
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 	const [errors, setErrors] = useState([]);
+	const [additionalSettings, setAdditionalSettings] = useState([]);
 
 	const fileDroppedHandler = useCallback((fileContents, fileName) => {
 		if (fileName.match(/\d{2}-\d{2}-\d{2}\.txt/)) {
@@ -82,6 +86,8 @@ const App = () => {
 
 	const dataCopy = fileData.data.map(datum => ({ ...datum })); // copy of data
 	const fileDataCopy = { fileName: fileData.fileName, data: dataCopy };
+	// console.log('prev', JSON.stringify(prevFileData));
+	// console.log('cur', JSON.stringify(fileData));
 
 	const hideSettingsModal = useCallback(() => {
 		setSettingsModalOpen(false);
@@ -106,7 +112,7 @@ const App = () => {
 			draggable
 			pauseOnHover />
 		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
-		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} nagLines={nagLines}  /> : null}
+		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} nagLines={nagLines} setAdditionalSettings={setAdditionalSettings} /> : null}
 		{showChart === 'statistics' ? <Statistics /> : null}
 		<Popup
 			top={10}
@@ -125,6 +131,12 @@ const App = () => {
 						{error.split('\n').map(line =>
 							<Fragment key={line}>{line}<br /></Fragment>)}
 					</div>)}
+				{additionalSettings.map(setting =>
+					<Fragment key={setting.title}>
+						<h4>{setting.title}</h4>
+						{setting.content}
+					</Fragment>
+				)}
 			</div>
 			<button type="button" className='modal-close' onClick={hideSettingsModal}>
 				Close modal

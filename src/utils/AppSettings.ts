@@ -16,6 +16,7 @@ export default class AppSettings {
 	static Metadata = AppSettingsMetadata;
 
 	private alwaysHideGroups: string[] = [];
+	private categories: { [key: string]: string } = {};
 
 	static loadSettings() {
 		return Neutralino.storage
@@ -40,6 +41,10 @@ export default class AppSettings {
 		return this.alwaysHideGroups;
 	}
 
+	getCategories() {
+		return this.categories;
+	}
+
 	addGroupToAlwaysHide(group: string) {
 		if (!this.alwaysHideGroups.includes(group)) {
 			this.alwaysHideGroups.push(group);
@@ -47,7 +52,10 @@ export default class AppSettings {
 		this.commit();
 	}
 
-
+	setCategories(categories: { [key: string]: string }) {
+		this.categories = categories;
+		this.commit();
+	}
 
 	static fromJSON(str: string) {
 		return parseStorageObject(AppSettings, str);

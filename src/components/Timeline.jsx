@@ -30,7 +30,7 @@ const html = innerHTML => {
 	return el;
 };
 
-const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }) => {
+const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines, setAdditionalSettings }) => {
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
@@ -90,11 +90,11 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	const groupTemplate = useCallback((group) => {
 		if (!group) return null;
 		const container = document.createElement('div');
-		
+
 		const label = document.createElement('span');
 		label.innerHTML = group.content + ' ';
 		container.insertAdjacentElement('afterBegin', label);
-		
+
 		const hide = document.createElement('button');
 		hide.innerHTML = 'Hide';
 		hide.style.fontSize = 'small';
@@ -102,7 +102,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			hideGroups([group]);
 		});
 		container.insertAdjacentElement('beforeEnd', hide);
-		
+
 		const alwaysHide = document.createElement('button');
 		alwaysHide.innerHTML = 'Always hide';
 		alwaysHide.style.fontSize = 'small';
@@ -111,9 +111,50 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			hideGroups([group]);
 		});
 		container.insertAdjacentElement('beforeEnd', alwaysHide);
-		
+
 		return container;
 	}, [appSettings, hideGroups]);
+
+	const storeCategories = useCallback(() => {
+		const element = document.getElementById('settingsCategories');
+		const entries = element.querySelectorAll('.entry');
+
+		const categories = {};
+		entries.forEach((entry) => {
+			const key = entry.childNodes[0].value;
+			const value = entry.childNodes[1].value;
+			categories[key] = value;
+		});
+
+		appSettings?.setCategories(categories);
+	}, [appSettings]);
+
+	const adjustAdditionalSettings = useCallback(() => {
+		const tasks = fileSettings.current.allTaskNames;
+		const categories = appSettings?.getCategories() || {};
+		tasks.forEach(taskName => {
+			if (!(taskName in categories)) {
+				categories[taskName] = '';
+			}
+		});
+
+		setAdditionalSettings([{
+			title: 'Categories',
+			content: <div id="settingsCategories">
+				{Object.keys(categories).map(category =>
+					<div key={category} className="entry">
+						<input defaultValue={category} />
+						<input defaultValue={categories[category]} placeholder="Category" />
+					</div>
+				)}
+				<button type="button" onClick={storeCategories}>Store</button>
+			</div>
+		}]);
+	}, [setAdditionalSettings, appSettings, storeCategories]);
+
+	useEffect(() => {
+		adjustAdditionalSettings();
+	}, []);
 
 	useEffect(() => {
 		if (nagLines.length && allGroups.current) {
@@ -230,6 +271,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 					});
 
 					forceUpdate();
+					adjustAdditionalSettings();
 				});
 		}
 
@@ -461,6 +503,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 					fileSettings.current.addDurationForTask(task.current, durationWithTime);
 				}
 				forceUpdate();
+				adjustAdditionalSettings();
 
 				const allBackgroundItems = items.current.map(i=>i)
 					.filter(i => typeof i.id === 'string' && i.id.startsWith('background')) // filter background items
@@ -655,7 +698,12 @@ Timeline.propTypes = {
 		})),
 		fileName: PropTypes.string
 	}).isRequired,
-	nagLines: PropTypes.arrayOf(PropTypes.string)
+	nagLines: PropTypes.arrayOf(PropTypes.string),
+	setAdditionalSettings: PropTypes.func.isRequired,
+	/* additionalSettings: PropTypes.arrayOf(PropTypes.shape({
+		title: PropTypes.string,
+		content: PropTypes.arrayOf(PropTypes.elementType)
+	})).isRequired */
 };
 
 export default Timeline;
