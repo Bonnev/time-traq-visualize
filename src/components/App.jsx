@@ -80,9 +80,6 @@ const App = () => {
 		});
 	}, []);
 
-	const dataCopy = fileData.data.map(datum => ({ ...datum })); // copy of data
-	const fileDataCopy = { fileName: fileData.fileName, data: dataCopy };
-
 	const hideSettingsModal = useCallback(() => {
 		setSettingsModalOpen(false);
 	}, []);
@@ -106,7 +103,7 @@ const App = () => {
 			draggable
 			pauseOnHover />
 		{showChart === 'chartjs' ? <ChartJs data={dataCopy} /> : null}
-		{showChart === 'timeline' ? <Timeline fileData={fileDataCopy} nagLines={nagLines}  /> : null}
+		{showChart === 'timeline' ? <Timeline fileData={fileData} nagLines={nagLines}  /> : null}
 		{showChart === 'statistics' ? <Statistics /> : null}
 		<Popup
 			top={10}

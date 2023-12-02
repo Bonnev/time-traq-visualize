@@ -113,7 +113,15 @@ const extractMetadata = (content: string): FileType => {
  * @param obj (any object) The source object
  * @param result (any object or array) The destination object
  */
-const parseStorageObjectRecursive = (obj: any, result: any = {}) => {
+export const parseStorageObjectRecursive = (obj: any, result?: any) => {
+	if (!result) {
+		if (Array.isArray(obj)) {
+			result = [];
+		} else {
+			result = {};
+		}
+	}
+
 	for (const property in obj) {
 		if (!Object.prototype.hasOwnProperty.call(obj, property)) {
 			continue;

@@ -3,7 +3,7 @@
 import { toast } from 'react-toastify';
 import { SETTINGS_NAME } from './AppSettings';
 import { Duration, PinnedDuration } from './dateTimeUtils';
-import {  MetadataBase, parseStorageObject, stringifyStorageObject } from './storageUtils';
+import {  MetadataBase, parseStorageObject, parseStorageObjectRecursive, stringifyStorageObject } from './storageUtils';
 
 const fileNameToKey = (fileName: string): string => fileName
 	.substring(0, fileName.lastIndexOf('.'))
@@ -15,6 +15,8 @@ const fileNameToKey = (fileName: string): string => fileName
 const NEUTRALINO_STORAGE_KEY_PATTERN = /^[a-zA-Z-_0-9]{1,50}$/;
 
 export class TaskInfo {
+	public type = 'TaskInfo';
+
 	pinnedDurations: PinnedDuration[] = [];
 	totalDuration: Duration = new Duration(0);
 
@@ -48,13 +50,13 @@ export class TaskInfo {
 		this.totalDuration = this.pinnedDurations.reduce((acc, current) => acc.add(current), new Duration(0));
 	}
 
-	// static fromJSON(obj: TaskInfoString): TaskInfo {
-	// 	const result = new TaskInfo(obj.taskName, obj.color, null);
-	// 	result.pinnedDurations = obj.pinnedDurations.map(pinnedDuration =>
-	// 		PinnedDuration.fromStrings(pinnedDuration.duration, pinnedDuration.startDate));
-	// 	result.recalculateDuration();; !!!! what about me? :(
-	// 	return result;
-	// }
+	static fromJSON(obj: {[key: string]: any}): TaskInfo {
+		const result = new TaskInfo(obj.taskName, obj.color);
+		parseStorageObjectRecursive(obj.pinnedDurations).map((pinnedDuration: PinnedDuration) =>
+			result.addPinnedDuration(pinnedDuration));
+		result.recalculateDuration();
+		return result;
+	}
 }
 (window as any).serializables.TaskInfo = TaskInfo;
 

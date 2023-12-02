@@ -191,9 +191,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	useEffect(() => {
 		if (!dataProp.length) return;
 
-		if (dataProp.length === prevDataProp?.length && dataProp[0].label === prevDataProp[0]?.label) {
-			return;
-		}
+		const dataPropCopy = dataProp.map(datum => ({ ...datum })); // copy of data
 
 		// if fileName has changed
 		if (prevFileName !== fileName) {
@@ -243,7 +241,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		// the imposibleregextomach is so that we always start with 1 - the extractedIndex is used in checks when sorting further down
 		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
 		let dataToAppend = [];
-		dataProp.forEach((datum) => {
+		dataPropCopy.forEach((datum) => {
 			const matchingGroupIndex = groupsToCopy.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 			if (matchingGroupIndex > -1) {
 				const matches = datum.title.match(new RegExp(groupsToCopy[matchingGroupIndex], 'g'));
@@ -252,7 +250,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 				}
 			}
 		});
-		const data = dataProp.concat(dataToAppend);
+		const data = dataPropCopy.concat(dataToAppend);
 
 		// group items matching these regexes and separate them into new groups
 		const groupsToExtract = [' - Personal - '];
