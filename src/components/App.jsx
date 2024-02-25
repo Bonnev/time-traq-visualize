@@ -80,6 +80,8 @@ const App = () => {
 		});
 	}, []);
 
+	const dataCopy = fileData.data.map(datum => ({ ...datum })); // copy of data
+
 	const hideSettingsModal = useCallback(() => {
 		setSettingsModalOpen(false);
 	}, []);

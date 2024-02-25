@@ -16,18 +16,37 @@ export default class AppSettings {
 	static Metadata = AppSettingsMetadata;
 
 	private alwaysHideGroups: string[] = [];
+	private groupsToCopy: string[] = [];
+	private groupsToExtract: ({[group: string]: string} | string)[] = [];
 
-	static loadSettings() {
-		return Neutralino.storage
-			.getData(SETTINGS_NAME)
-			.then((str: string) => AppSettings.fromJSON(str))
-			.catch(err => {
-				if (err.code || err.code === 'NE_ST_NOSTKEX') {
-					return new AppSettings();
-				}
+	static async loadSettings() {
+		let settings;
 
-				throw err;
-			});
+		try {
+			const data = await Neutralino.storage.getData(SETTINGS_NAME);
+			settings = AppSettings.fromJSON(data);
+		} catch (error: any) {
+			if (error.code || error.code === 'NE_ST_NOSTKEX') {
+				settings = new AppSettings();
+			} else {
+				throw error;
+			}
+		}
+
+		let commitDefaults = false;
+
+		if (!settings.groupsToCopy.length) {
+			settings.groupsToCopy = ['INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
+			commitDefaults = true;
+		}
+		if (!settings.groupsToExtract.length) {
+			settings.groupsToExtract = [{ ' - Personal - ': 'Personal' }];
+			commitDefaults = true;
+		}
+
+		commitDefaults && settings.commit();
+
+		return settings;
 	}
 
 	commit() {
@@ -47,7 +66,13 @@ export default class AppSettings {
 		this.commit();
 	}
 
+	getGroupsToCopy() {
+		return this.groupsToCopy;
+	}
 
+	getGroupsToExtract() {
+		return this.groupsToExtract.map(group => typeof group !== 'string' ? group : { [group]: group });
+	}
 
 	static fromJSON(str: string) {
 		return parseStorageObject(AppSettings, str);

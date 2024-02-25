@@ -90,11 +90,11 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	const groupTemplate = useCallback((group) => {
 		if (!group) return null;
 		const container = document.createElement('div');
-		
+
 		const label = document.createElement('span');
 		label.innerHTML = group.content + ' ';
 		container.insertAdjacentElement('afterBegin', label);
-		
+
 		const hide = document.createElement('button');
 		hide.innerHTML = 'Hide';
 		hide.style.fontSize = 'small';
@@ -102,7 +102,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			hideGroups([group]);
 		});
 		container.insertAdjacentElement('beforeEnd', hide);
-		
+
 		const alwaysHide = document.createElement('button');
 		alwaysHide.innerHTML = 'Always hide';
 		alwaysHide.style.fontSize = 'small';
@@ -111,7 +111,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			hideGroups([group]);
 		});
 		container.insertAdjacentElement('beforeEnd', alwaysHide);
-		
+
 		return container;
 	}, [appSettings, hideGroups]);
 
@@ -189,9 +189,9 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 	}, [toggleMenu]);
 
 	useEffect(() => {
-		if (!dataProp.length) return;
+		if (!dataProp.length || !appSettings) return;
 
-		const dataPropCopy = dataProp.map(datum => ({ ...datum })); // copy of data
+		let data = dataProp.map(datum => ({ ...datum })); // copy of data
 
 		// if fileName has changed
 		if (prevFileName !== fileName) {
@@ -239,27 +239,29 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 
 		// group items matching these regexes and copy them to new groups
 		// the imposibleregextomach is so that we always start with 1 - the extractedIndex is used in checks when sorting further down
-		const groupsToCopy = ['imposibleregextomach', 'INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
+		const groupsToCopy = ['imposibleregextomach', ...appSettings.getGroupsToCopy()];
 		let dataToAppend = [];
-		dataPropCopy.forEach((datum) => {
+		data.forEach((datum) => {
 			const matchingGroupIndex = groupsToCopy.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 			if (matchingGroupIndex > -1) {
 				const matches = datum.title.match(new RegExp(groupsToCopy[matchingGroupIndex], 'g'));
-				if (matches && matches.length === 1) {
-					dataToAppend.push({ ...datum, process: matches[0], label: matches[0], extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})` });
+				if (matches) {
+					matches.forEach(match =>
+						dataToAppend.push({ ...datum, process: match, label: match, extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})` })
+					);
 				}
 			}
 		});
-		const data = dataPropCopy.concat(dataToAppend);
+		data = data.concat(dataToAppend);
 
 		// group items matching these regexes and separate them into new groups
-		const groupsToExtract = [' - Personal - '];
-		const extractNewNames = ['Personal'];
+		const groupsToExtract = appSettings.getGroupsToExtract().map(group => Object.keys(group)[0]);
+		const extractNewNames = appSettings.getGroupsToExtract().map(group => Object.values(group)[0]);
 		data.forEach((datum) => {
 			const matchingGroupIndex = groupsToExtract.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 			if (matchingGroupIndex > -1) {
 				const matches = datum.title.match(new RegExp(groupsToExtract[matchingGroupIndex], 'g'));
-				if (matches && matches.length === 1) {
+				if (matches) {
 					// change process and label, grouping will happen automatically with the main logic
 					datum.process = extractNewNames[matchingGroupIndex];
 					datum.label = extractNewNames[matchingGroupIndex];
@@ -524,7 +526,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 		};
 
 		timeline.current = timelineLocal;
-	}, [fileData]);
+	}, [fileData, appSettings]);
 
 	useEffect(() => {
 		if (allGroups.current && appSettings) {
