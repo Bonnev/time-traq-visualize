@@ -29,5 +29,6 @@ yarn-error.log*
 /.history
 dist
 .tmp
+bin
 .storage
 .archive
