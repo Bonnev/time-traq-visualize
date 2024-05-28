@@ -2,11 +2,8 @@
 	"applicationId": "js.neutralino.sample",
 	"version": "1.0.0",
 	"defaultMode": "window",
-	"port": 0,
 	"documentRoot": "/dist/",
-	"url": "/index.html",
-	"__documentRoot": "/./",
-	"__url": "http://127.0.0.1:5173/index.html",
+	"url": "/",
 	"enableServer": true,
 	"enableNativeAPI": true,
 	"tokenSecurity": "none", 
@@ -17,14 +14,16 @@
 	"nativeAllowList": [
 		"filesystem.*",
 		"window.setTitle",
-		"storage.*"
+		"storage.*",
+		"window.focus",
+		"app.exit"
 	],
 	"globalVariables": {
 		"TEST1": "Hello"
 	},
 	"modes": {
 		"window": {
-			"title": "neutralinojs",
+			"title": "time-traq-visualize",
 			"width": 800,
 			"height": 500,
 			"minWidth": 400,
@@ -37,7 +36,7 @@
 			"maximize": false,
 			"hidden": false,
 			"resizable": true,
-			"exitProcessOnClose": true
+			"exitProcessOnClose": false
 		},
 		"browser": {
 			"globalVariables": {
@@ -57,15 +56,17 @@
 		}
 	},
 	"cli": {
-		"binaryName": "neutralinojs",
+		"binaryName": "time-traq-visualize",
 		"resourcesPath": "/dist/",
 		"extensionsPath": "/extensions/",
-		"clientLibrary": "/dist/neutralino.js",
-		"binaryVersion": "4.5.0",
-		"clientVersion": "3.4.0",
-	"frontendLibrary": {
-			"patchFile": "/index.html",
-			"devUrl": "http://127.0.0.1:5173"
+		"binaryVersion": "5.1.0",
+		"clientVersion": "5.1.0",
+		"frontendLibrary": {
+			"patchFile": "./index.html",
+			"projectPath": "./",
+			"devUrl": "http://localhost:5173",
+			"devCommand": "yarn vite-dev",
+			"buildCommand": "yarn vite-build"
 		}
 	}
 }

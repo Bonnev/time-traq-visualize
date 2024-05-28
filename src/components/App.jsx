@@ -9,6 +9,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
 import Statistics from './Statistics.jsx';
 import Popup from './Popup';
+import * as Neutralino from '@neutralinojs/lib';
 
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 

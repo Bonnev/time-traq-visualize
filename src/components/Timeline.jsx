@@ -30,7 +30,7 @@ const html = innerHTML => {
 	return el;
 };
 
-const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }) => {
+const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines = [] }) => {
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
@@ -636,10 +636,6 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines }
 			</button>
 		</Popup>
 	</>);
-};
-
-Timeline.defaultProps = {
-	nagLines: []
 };
 
 Timeline.propTypes = {

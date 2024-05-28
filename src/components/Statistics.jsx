@@ -1,6 +1,7 @@
 import { React, useEffect, useState, useCallback, Fragment } from 'react';
 import FileSettings from '../utils/FileSettings.ts';
 import { Duration } from '../utils/dateTimeUtils';
+import * as Neutralino from '@neutralinojs/lib';
 
 import '../styles/Statistics.css';
 

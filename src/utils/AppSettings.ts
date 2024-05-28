@@ -1,5 +1,6 @@
 import { MetadataBase, parseStorageObject, stringifyStorageObject } from './storageUtils';
 
+import * as Neutralino from '@neutralinojs/lib';
 import { toast } from 'react-toastify';
 
 export const SETTINGS_NAME = 'settings';

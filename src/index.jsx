@@ -1,20 +1,58 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import App from './components/App.jsx';
+import { app, events, init, window as neuWindow } from '@neutralinojs/lib';
 
 // import reportWebVitals from './utils/reportWebVitals';
 
 import './styles/index.css';
+ 
+(async function() {
+	if (import.meta.env.DEV && !window.NL_TOKEN) {
+		try {
+			// method 1
+			const storedToken = sessionStorage.getItem('NL_TOKEN');
+			if (storedToken) {
+				window.NL_TOKEN = storedToken;
+			} else {
+				// method 2
+				const authInfo = await import('../.tmp/auth_info.json');
+				const { nlToken, nlPort } = authInfo;
+				window.NL_PORT = nlPort;
+				window.NL_TOKEN = nlToken;
+				window.NL_ARGS = [
+					'bin\\neutralino-win_x64.exe',
+					'',
+					'--load-dir-res',
+					'--path=.',
+					'--export-auth-info',
+					'--neu-dev-extension',
+					'--neu-dev-auto-reload',
+					'--window-enable-inspector',
+				];
+			}
+		} catch {
+			console.error('Auth file not found, native API calls will not work.');
+		}
+	}
 
-Neutralino.init();
+	init();
 
-ReactDOM.render(
-	<React.StrictMode>
-		<App />
-	</React.StrictMode>,
-	document.getElementById('root'));
+	events.on('serverOffline',function() {
+		const date = new Date();
+		const timestamp = date.toLocaleString('en-US');
+		console.log('server offline ' + timestamp );
+		window.location.reload();
+	});
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-// reportWebVitals();
+
+	ReactDOM.createRoot(document.getElementById('root')).render(
+		<React.StrictMode>
+			<App />
+		</React.StrictMode>
+	);
+
+	events.on('windowClose', () => app.exit());
+
+	neuWindow.focus();
+})();

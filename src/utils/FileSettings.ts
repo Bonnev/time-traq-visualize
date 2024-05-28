@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { SETTINGS_NAME } from './AppSettings';
 import { Duration, PinnedDuration } from './dateTimeUtils';
 import {  MetadataBase, parseStorageObject, parseStorageObjectRecursive, stringifyStorageObject } from './storageUtils';
+import * as Neutralino from '@neutralinojs/lib';
 
 const fileNameToKey = (fileName: string): string => fileName
 	.substring(0, fileName.lastIndexOf('.'))

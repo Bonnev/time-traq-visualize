@@ -1,16 +1,18 @@
 {
   "name": "time-traq-visualize",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
-    "start": "concurrently -k -n vite-dev,neu \"yarn:vite-dev\" \"yarn:neu-run-dev\"",
-    "build": "vite build --mode prod && neu build",
-    "preview": "vite build --mode prod && neu run",
-    "neu-run-dev": "neu run -- --port=8080 --url=http://127.0.0.1:5173/index.html --document-root=\"\\/./\" --window-enable-inspector=true",
-    "vite-dev": "vite --mode dev"
+    "init": "neu update",
+    "start": "neu run -- --window-enable-inspector=true",
+    "build": "neu build",
+    "vite-dev": "vite",
+    "vite-build": "NODE_ENV=production vite build"
   },
   "dependencies": {
     "@egjs/hammerjs": "^2.0.0",
+    "@neutralinojs/lib": "^5.1.0",
     "@szhsin/react-menu": "^3.3.1",
     "@types/prop-types": "^15.7.5",
     "@types/randomcolor": "^0.5.6",
@@ -21,8 +23,8 @@
     "moment": "^2.29.4",
     "prop-types": "^15.8.1",
     "propagating-hammerjs": "^2.0.0",
-    "react": "^17.0.0",
-    "react-dom": "^17.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-modal-resizable-draggable": "^0.1.6",
     "react-toastify": "^9.0.8",
     "typescript": "4.4.4",
@@ -34,18 +36,17 @@
     "xss": "^1.0.0"
   },
   "devDependencies": {
-    "@neutralinojs/neu": "^9.3.1",
+    "@neutralinojs/neu": "^11.0.1",
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
-    "@vitejs/plugin-react": "^2.0.1",
+    "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^5.0.1",
     "eslint": "^8.2.0",
     "eslint-plugin-react": "^7.31.4",
     "eslint-plugin-react-hooks": "^4.0.8",
-    "vite": "^3.0.7",
-    "vite-plugin-html-env": "^1.2.7"
+    "vite": "^5.2.0"
   },
   "browserslist": {
     "production": [
