@@ -431,18 +431,17 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 
 			// if double-clicked on open space
 
-			const text = TimeAndDate.fromDate(eventProps.time).format('HH:mm:ss');
-			const markerText = text || undefined;
+			const markerText = TimeAndDate.fromDate(eventProps.time).format('HH:mm:ss');
 
 			timeline.current.addCustomTime(eventProps.time, eventProps.time);
 			timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
-			timeline.current.setCustomTimeMarker(markerText,  eventProps.time, false);
-			markers.current.push({ customTime: eventProps.time, time: text });
+			timeline.current.setCustomTimeMarker(markerText || undefined,  eventProps.time, false);
+			markers.current.push({ customTime: eventProps.time, time: markerText });
 
 			// if markers are even, then we have a start and and an end, so add a background/task
 			if (markers.current.length % 2 === 0) {
 				const start = markers.current[markers.current.length - 2].time;
-				const end = text;
+				const end = markerText;
 
 				const startDate = TimeAndDate.parse(start, 'HH:mm:ss');
 				const endDate = TimeAndDate.parse(end, 'HH:mm:ss');
@@ -450,15 +449,16 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 				const duration = endDate.subtract(startDate);
 				const durationWithTime = duration.withStartTime(startDate);
 
-				const currentFileTask = fileSettings.current.getTask(task.current);
+				const taskText = task.current.trim();
+				const currentFileTask = fileSettings.current.getTask(taskText);
 				const color = currentFileTask?.color || randomColorRGBA(0.4);
 
 				window.TimeAndDate = TimeAndDate;
 				window.fileSettings = fileSettings;
 				if (!currentFileTask) {
-					fileSettings.current.setTask(task.current, color, durationWithTime);
+					fileSettings.current.setTask(taskText, color, durationWithTime);
 				} else {
-					fileSettings.current.addDurationForTask(task.current, durationWithTime);
+					fileSettings.current.addDurationForTask(taskText, durationWithTime);
 				}
 				forceUpdate();
 
@@ -472,11 +472,11 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 				items.current.add([{
 					id: id,
 					content: '',
-					title: html(`(${task.current})\n${start} -> ${end}\n(${duration.toPrettyString()})`),
+					title: html(`(${taskText})\n${start} -> ${end}\n(${duration.toPrettyString()})`),
 					start: timelineDate + ' ' + start,
 					end: timelineDate + ' ' + end,
 					style: `background-color: ${color}`,
-					taskName: task.current,
+					taskName: taskText,
 					type: 'background',
 				}]);
 
