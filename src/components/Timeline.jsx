@@ -269,6 +269,18 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 			}
 		});
 
+		// rename items matching the key regexes with the value strings (including groups)
+		const itemsToRename = appSettings.getItemsToRename().map(group => Object.keys(group)[0]);
+		const itemsToRenameNewNames = appSettings.getItemsToRename().map(group => Object.values(group)[0]);
+		data.forEach((datum) => {
+			const matchingGroupIndex = itemsToRename.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
+			if (matchingGroupIndex > -1) {
+				// change title and content
+				datum.title = datum.title.replace(new RegExp(itemsToRename[matchingGroupIndex], 'g'), itemsToRenameNewNames[matchingGroupIndex]);
+				datum.content = datum.title;
+			}
+		});
+
 		data.forEach((datum) => {
 			if (!unique.map(u => u.label).includes(datum.label)) {
 				unique.push(datum);

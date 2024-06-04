@@ -19,6 +19,7 @@ export default class AppSettings {
 	private alwaysHideGroups: string[] = [];
 	private groupsToCopy: string[] = [];
 	private groupsToExtract: ({[group: string]: string} | string)[] = [];
+	private itemsToRename: ({[group: string]: string} | string)[] = [];
 
 	static async loadSettings() {
 		let settings;
@@ -73,6 +74,10 @@ export default class AppSettings {
 
 	getGroupsToExtract() {
 		return this.groupsToExtract.map(group => typeof group !== 'string' ? group : { [group]: group });
+	}
+
+	getItemsToRename() {
+		return this.itemsToRename;
 	}
 
 	static fromJSON(str: string) {
