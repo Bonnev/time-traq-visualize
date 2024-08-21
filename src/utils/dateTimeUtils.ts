@@ -1,5 +1,7 @@
-import moment from 'moment';
 import { PrettyStringable, Serializable, TypedValue } from './storageUtils';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
 
 (window as any).serializables ||= [];
 
@@ -7,19 +9,19 @@ export class TimeAndDate implements PrettyStringable, Serializable {
 	static DEFAULT_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
 	public type = 'TimeAndDate';
-	_store : moment.Moment = moment();
+	_store : dayjs.Dayjs = dayjs();
 
 	static parse(value: string, format: string): TimeAndDate {
 		const time: TimeAndDate = new TimeAndDate();
 
-		time._store = moment(value, format);
+		time._store = dayjs(value, format);
 		return time;
 	}
 
 	static fromDate(date: Date): TimeAndDate {
 		const time: TimeAndDate = new TimeAndDate();
 
-		time._store = moment(date);
+		time._store = dayjs(date);
 		return time;
 	}
 
@@ -33,7 +35,7 @@ export class TimeAndDate implements PrettyStringable, Serializable {
 
 	add(duration: Duration): TimeAndDate {
 		const result = new TimeAndDate();
-		result._store = moment(this._store).add(duration.totalSeconds, 'seconds');
+		result._store = this._store.add(duration.totalSeconds, 'second');
 		return result;
 	}
 
@@ -60,14 +62,14 @@ export class TimeAndDate implements PrettyStringable, Serializable {
 
 export class Duration implements PrettyStringable, Serializable {
 	public type = 'Duration';
-	protected _libDuration: moment.Duration;
+	protected _libDuration: duration.Duration;
 
 	constructor(durationInMilliseconds?: number) {
-		this._libDuration = moment.duration(durationInMilliseconds);
+		this._libDuration = dayjs.duration({ milliseconds: durationInMilliseconds });
 	}
 
 	add(duration: Duration): Duration {
-		return new Duration(moment.duration(this._libDuration).add(duration._libDuration).asMilliseconds());
+		return new Duration(this._libDuration.add(duration._libDuration).asMilliseconds());
 	}
 
 	get totalSeconds(): number {
@@ -83,18 +85,18 @@ export class Duration implements PrettyStringable, Serializable {
 	}
 
 	toPrettyString(): string {
-		return String(this._libDuration.toString());
+		return String(this.toJSON().value);
 	}
 
 	toJSON(): TypedValue {
 		return {
 			type: this.type,
-			value: this._libDuration.toString()
+			value: this._libDuration.toISOString()
 		};
 	}
 
 	static fromJSON(str: string): Duration {
-		return new Duration(moment.duration(str).asMilliseconds());
+		return new Duration(dayjs.duration(str).asMilliseconds());
 	}
 }
 (window as any).serializables.Duration = Duration;
