@@ -58,12 +58,10 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 	// const nextDate = '2022-04-08';
 
 	useEffect(() => {
-		if (!appSettings) {
-			AppSettings.loadSettings().then(settings => {
-				setAppSettings(settings);
-			});
-		}
-	}, [appSettings]);
+		AppSettings.waitAndLoadSettings().then(settings => {
+			setAppSettings(settings);
+		});
+	}, []);
 
 	const hideGroups = useCallback(groups => {
 		if (!allGroups.current) {

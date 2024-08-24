@@ -1,4 +1,4 @@
-import { React, useEffect, useState, useCallback, Fragment } from 'react';
+import { React, useEffect, useState, useRef, useCallback, Fragment } from 'react';
 
 import ChartJs from './ChartJs.jsx';
 import FileDropper from './FileDropper.jsx';
@@ -10,6 +10,8 @@ import 'react-toastify/dist/ReactToastify.min.css';
 import Statistics from './Statistics.jsx';
 import Popup from './Popup';
 import * as Neutralino from '@neutralinojs/lib';
+import AppSettings, { SETTINGS_NAME } from '../utils/AppSettings.ts';
+import { JSONEditor } from '@json-editor/json-editor';
 
 const DEFAULT_FILE_PATH = 'C:\\input.txt';
 
@@ -19,6 +21,36 @@ const App = () => {
 	const [nagLines, setNagLines] = useState([]);
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 	const [errors, setErrors] = useState([]);
+	const settingsJsonEditor = useRef(null);
+
+	const [appSettings, setAppSettings] = useState();
+
+	useEffect(() => {
+		AppSettings.waitAndLoadSettings().then(settings => {
+			setAppSettings(settings);
+		});
+	}, []);
+
+	useEffect(() => {
+		if (settingsModalOpen && appSettings && !settingsJsonEditor.current) {
+			settingsJsonEditor.current = new JSONEditor(document.getElementById('settingsJsonEditor'), {
+				schema: AppSettings.Schema,
+				required_by_default: true,
+				collapsed: true,
+				disable_edit_json: true,
+				startval: appSettings
+			});
+		}
+	});
+
+	const storeSettings = useCallback(() => {
+		const settingsJson = settingsJsonEditor.current.getValue();
+		Neutralino.storage
+			.setData(SETTINGS_NAME, `/* ${JSON.stringify(AppSettings.Metadata)} */\n${JSON.stringify(settingsJson)}`)
+			.catch((e) => toast.error('Error storing settings ' + e));
+		setAppSettings(settingsJson);
+		toast.info('Done! Please reload.');
+	}, []);
 
 	const fileDroppedHandler = useCallback((fileContents, fileName) => {
 		if (fileName.match(/\d{2}-\d{2}-\d{2}\.txt/)) {
@@ -125,6 +157,9 @@ const App = () => {
 						{error.split('\n').map(line =>
 							<Fragment key={line}>{line}<br /></Fragment>)}
 					</div>)}
+
+				<div id='settingsJsonEditor' style={{ textAlign: 'left' }} />
+				<button type="button" onClick={storeSettings}>Save settings</button>
 			</div>
 			<button type="button" className='modal-close' onClick={hideSettingsModal}>
 				Close modal

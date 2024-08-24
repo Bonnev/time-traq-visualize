@@ -13,42 +13,102 @@ const AppSettingsMetadata: AppSettingsMetadataType = {
 	version: 1
 };
 
+const EditorSchema: object = {
+	title: 'App Settings',
+	type: 'object',
+	options: {
+		collapsed: true,
+		disable_properties: true
+	},
+	properties: {
+		alwaysHideGroups: {
+			type: 'array',
+			format: 'table',
+			items: {
+				type: 'string'
+			}
+		},
+		groupsToCopy: {
+			type: 'array',
+			format: 'table',
+			items: {
+				type: 'string'
+			}
+		},
+		groupsToExtract: {
+			type: 'array',
+			items: {
+				type: 'object'
+			}
+		},
+		itemsToRename: {
+			type: 'array',
+			items: {
+				type: 'object'
+			}
+		}
+	}
+};
+
 export default class AppSettings {
 	static Metadata = AppSettingsMetadata;
+	static Schema = EditorSchema;
 
 	private alwaysHideGroups: string[] = [];
 	private groupsToCopy: string[] = [];
 	private groupsToExtract: ({[group: string]: string} | string)[] = [];
 	private itemsToRename: ({[group: string]: string} | string)[] = [];
 
-	static async loadSettings() {
+	private static SETTINGS_PROMISE: Promise<AppSettings | null> | null = null;
+	private static SETTINGS: AppSettings | null = null;
+
+	static async waitAndLoadSettings(): Promise<AppSettings | null> {
+		if (AppSettings.SETTINGS_PROMISE) {
+			// Reuse the existing promise if loading is already in progress
+			return AppSettings.SETTINGS_PROMISE;
+		}
+
+		AppSettings.SETTINGS_PROMISE = this.loadSettings();
+
+		return AppSettings.SETTINGS_PROMISE;
+	}
+
+	private static async loadSettings(): Promise<AppSettings | null> {
+		if (this.SETTINGS) {
+			return this.SETTINGS;
+		}
+
 		let settings;
 
 		try {
 			const data = await Neutralino.storage.getData(SETTINGS_NAME);
 			settings = AppSettings.fromJSON(data);
+
+			let commitDefaults = false;
+
+			if (!settings.groupsToCopy.length) {
+				settings.groupsToCopy = ['INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
+				commitDefaults = true;
+			}
+			if (!settings.groupsToExtract.length) {
+				settings.groupsToExtract = [{ ' - Personal - ': 'Personal' }];
+				commitDefaults = true;
+			}
+
+			commitDefaults && settings.commit();
+
+			AppSettings.SETTINGS = settings;
+			return settings;
 		} catch (error: any) {
 			if (error.code || error.code === 'NE_ST_NOSTKEX') {
 				settings = new AppSettings();
 			} else {
 				throw error;
 			}
+			return null;
+		} finally {
+			AppSettings.SETTINGS_PROMISE = null;
 		}
-
-		let commitDefaults = false;
-
-		if (!settings.groupsToCopy.length) {
-			settings.groupsToCopy = ['INFONDS-\\d+', 'DOC-\\d+', 'ENGSUPPORT-\\d+'];
-			commitDefaults = true;
-		}
-		if (!settings.groupsToExtract.length) {
-			settings.groupsToExtract = [{ ' - Personal - ': 'Personal' }];
-			commitDefaults = true;
-		}
-
-		commitDefaults && settings.commit();
-
-		return settings;
 	}
 
 	commit() {

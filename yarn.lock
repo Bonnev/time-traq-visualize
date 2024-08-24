@@ -429,6 +429,13 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@json-editor/json-editor@^2.15.1":
+  version "2.15.1"
+  resolved "https://registry.yarnpkg.com/@json-editor/json-editor/-/json-editor-2.15.1.tgz#93451868f9174055c680d388fcdf5a18f4a1df54"
+  integrity sha512-Z4KFXpL7I9wrKD94c1PcIwFfCvUzYhwM0jH2ihP2OSH8wut0FnqzCfKCL0gdNHG3A2UVsyVJBoU9Iwsc0xB6zQ==
+  dependencies:
+    core-js "^3.27.2"
+
 "@neutralinojs/lib@^5.1.0":
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/@neutralinojs/lib/-/lib-5.2.0.tgz#a50ffb84a18f29de2c9e756bbe687322e0f14e98"
@@ -1199,6 +1206,11 @@ convert-source-map@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/convert-source-map/-/convert-source-map-2.0.0.tgz#4b560f649fc4e918dd0ab75cf4961e8bc882d82a"
   integrity sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==
+
+core-js@^3.27.2:
+  version "3.38.1"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.38.1.tgz#aa375b79a286a670388a1a363363d53677c0383e"
+  integrity sha512-OP35aUorbU3Zvlx7pjsFdu1rGNnD4pgw/CWoYzRY3t2EzoVT7shKHY1dlAy3f41cGIO7ZDPQimhGFTlEYkG/Hw==
 
 core-util-is@~1.0.0:
   version "1.0.3"
