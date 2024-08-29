@@ -3,7 +3,7 @@ import { React, useEffect, useState, useRef, useCallback, Fragment } from 'react
 import ChartJs from './ChartJs.jsx';
 import FileDropper from './FileDropper.jsx';
 import Timeline from './Timeline.jsx';
-import { TimeAndDate } from '../utils/dateTimeUtils.ts';
+import { fileDroppedHandler } from '../utils/timelineUtils.ts';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
@@ -52,59 +52,16 @@ const App = () => {
 		toast.info('Done! Please reload.');
 	}, []);
 
-	const fileDroppedHandler = useCallback((fileContents, fileName) => {
-		if (fileName.match(/\d{2}-\d{2}-\d{2}\.txt/)) {
-			setNagLines(fileContents.split('\n'));
-			return;
-		}
-
-		const timelineDate = '2022-04-07';
-		// const nextDate = '2022-04-08';
-
-		const lines = fileContents.split('\n');
-
-		const matrix = lines
-			.filter(line => line.length > 0) // only non-empty lines
-			.map(line => line.split('\t')); // split by tab
-
-		let data = [];
-
-		matrix.forEach((current, index) => {
-			if (index - 1 < 0) return;
-
-			// C:\Program Files\...\msedge.exe	Rewriting Git History... - YouTube and 30 more pages - Personal - Microsoft Edge	08:50:06	08:53:47
-			const prevRow = matrix[index - 1];
-			// const current = matrix[index]; // automatic by first parameter
-
-			const prevRowTime = TimeAndDate.parse(prevRow[3], 'HH:mm:ss');
-			const currentRowTime = TimeAndDate.parse(current[3], 'HH:mm:ss');
-			const durationSeconds = currentRowTime.subtract(prevRowTime).totalSeconds;
-
-			data.push({
-				label: current[0],
-				process: current[0].substring(current[0].lastIndexOf('\\') + 1),
-				content: current[1].replace(/and \d+ more pages?/, '').substring(0, 50),
-				title: current[1].replace(/and \d+ more pages?/, ''),
-				number: durationSeconds,
-				start: timelineDate + ' ' + prevRow[3],
-				end: timelineDate + ' ' + current[3]
-			});
-		});
-
-		setFileData({ data, fileName });
-		setNagLines([]);
-
-		Neutralino.window.setTitle(`TimeTraq Visualize - ${fileName}`);
-	}, []);
+	const fileDroppedHandlerApp = fileDroppedHandler.bind(null, setFileData, setNagLines);
 
 	useEffect(() => {
 		Neutralino.filesystem.getStats(DEFAULT_FILE_PATH)
 			.then(() => Neutralino.filesystem.readFile(DEFAULT_FILE_PATH))
 			.then((content) =>
-				fileDroppedHandler(content, DEFAULT_FILE_PATH.substring(DEFAULT_FILE_PATH.lastIndexOf('\\') + 1)))
+				fileDroppedHandlerApp(content, DEFAULT_FILE_PATH.substring(DEFAULT_FILE_PATH.lastIndexOf('\\') + 1)))
 			.then(() => Neutralino.window.setTitle(`TimeTraq Visualize - ${DEFAULT_FILE_PATH.substring(DEFAULT_FILE_PATH.lastIndexOf('\\') + 1)}`))
 			.catch(() => toast.error(`Default file "${DEFAULT_FILE_PATH}" not found`, { autoClose: 5000 }));
-	}, [fileDroppedHandler]);
+	}, []);
 
 	useEffect(() => {
 		window.addEventListener('error', function(event) {
@@ -124,7 +81,7 @@ const App = () => {
 	}, []);
 
 	return (<>
-		<FileDropper fileDroppedHandler={fileDroppedHandler} />
+		<FileDropper fileDroppedHandler={fileDroppedHandlerApp} />
 		<div className='flex-container-with-equal-children'>
 			<button type="button" onClick={()=>setShowChart('chartjs')}>ChartJs</button>
 			<button type="button" onClick={()=>setShowChart('timeline')}>Timeline</button>

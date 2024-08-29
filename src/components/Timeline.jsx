@@ -18,6 +18,8 @@ import FileSettings from '../utils/FileSettings.ts';
 import AppSettings from '../utils/AppSettings';
 import { TimeAndDate, Duration } from '../utils/dateTimeUtils.ts';
 import { setAsyncTimeout } from '../utils/callbackPromise.ts';
+import * as Neutralino from '@neutralinojs/lib';
+import { fileDroppedHandler } from '../utils/timelineUtils.ts';
 
 patchItemSet(vis.util, vis.timeline);
 
@@ -30,10 +32,16 @@ const html = innerHTML => {
 	return el;
 };
 
-const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines = [] }) => {
+const Timeline = ({ fileData: fileDataProp, nagLines = [] }) => {
+	const [fileData, setFileData] = useState(fileDataProp);
+	const { data: dataProp = [], fileName } = fileData;
+
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
 	const forceUpdate = useCallback(() => updateState({}), []);
+
+	const [timeTraqLogsPopupOpen, setTimeTraqLogsPopupOpen] = useState(false);
+	const [timeTraqLogs, setTimeTraqLogs] = useState([]);
 
 	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
 	const allGroups = useRef();
@@ -58,9 +66,16 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 	// const nextDate = '2022-04-08';
 
 	useEffect(() => {
-		AppSettings.waitAndLoadSettings().then(settings => {
-			setAppSettings(settings);
-		});
+		AppSettings.waitAndLoadSettings()
+			.then(settings => { setAppSettings(settings); return settings; })
+			.then(settings => Neutralino.filesystem.readDirectory(settings.timeTraqFolder))
+			.then(logs => logs.filter(log => log.entry.match(/^test-\d{4}\.\d{2}\.\d{2}.txt$/g)))
+			.then(logs => {
+				if (logs.length) {
+					setTimeTraqLogs(logs);
+					setTimeTraqLogsPopupOpen(true);
+				}
+			});
 	}, []);
 
 	const hideGroups = useCallback(groups => {
@@ -536,7 +551,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 		};
 
 		timeline.current = timelineLocal;
-	}, [fileData, appSettings]);
+	}, [fileData, fileDataProp, appSettings]);
 
 	useEffect(() => {
 		if (allGroups.current && appSettings) {
@@ -588,13 +603,11 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 
 	}, [timeline]);
 
-	const showStatisticsPopup = useCallback(() => {
-		setStatisticsPopupOpen(true);
-	}, [setStatisticsPopupOpen]);
+	const showStatisticsPopup = useCallback(() => setStatisticsPopupOpen(true), []);
+	const hideStatisticsPopup = useCallback(() => setStatisticsPopupOpen(false), []);
 
-	const hideStatisticsPopup = useCallback(() => {
-		setStatisticsPopupOpen(false);
-	}, [setStatisticsPopupOpen]);
+	const showTimeTraqLogsPopup = useCallback(() => setTimeTraqLogsPopupOpen(true), []);
+	const hideTimeTraqLogsPopup = useCallback(() => setTimeTraqLogsPopupOpen(false), []);
 
 	const getBackgroundStatistics = () => {
 		let total = new Duration(0);
@@ -605,6 +618,22 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 		})}
 			Total: {total.toPrettyString()}<br />
 		</div>;
+	};
+
+	const loadTimeTraqLog = log => () => {
+		Neutralino.filesystem
+			.readFile(log.path)
+			.then(fileContents => fileDroppedHandler(setFileData, (l) => nagLines = l, fileContents, log.entry));
+	};
+
+	const getTimeTraqLogs = () => {
+		if (!timeTraqLogs.length) return;
+
+		return timeTraqLogs
+			.map(log => <Fragment key={log.entry}>
+				<button type="button" onClick={loadTimeTraqLog(log)}>{log.entry}</button>
+				<br />
+			</Fragment>);
 	};
 
 	return (<>
@@ -620,6 +649,7 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 				)}
 			</datalist>
 			<button type="button" onClick={showAllGroups.current}>Show all groups</button>
+			<button type="button" onClick={showTimeTraqLogsPopup}>Show TimeTraq Logs</button>
 		</div>
 		<div id='visualization' />
 		<ControlledMenu {...menuProps} anchorPoint={anchorPoint}
@@ -642,6 +672,23 @@ const Timeline = ({ fileData, fileData: { data: dataProp, fileName }, nagLines =
 				{getBackgroundStatistics()}
 			</div>
 			<button type="button" className='modal-close' onClick={hideStatisticsPopup}>
+				Close modal
+			</button>
+		</Popup>
+		<Popup
+			top={10}
+			left={10}
+			initialWidth={800}
+			initialHeight={400}
+			className="my-modal-custom-class"
+			onClose={hideTimeTraqLogsPopup}
+			isOpen={timeTraqLogsPopupOpen}>
+
+			<h3 className='modal-header'>TimeTraq Logs</h3>
+			<div className='body'>
+				{getTimeTraqLogs()}
+			</div>
+			<button type="button" className='modal-close' onClick={hideTimeTraqLogsPopup}>
 				Close modal
 			</button>
 		</Popup>

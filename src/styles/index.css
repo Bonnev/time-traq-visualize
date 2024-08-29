@@ -79,6 +79,7 @@ h3.modal-header {
 div.flexible-modal div.body {
 	overflow: auto;
 	height: calc(100% - 100px);
+	padding: 5px;
 }
 
 .vis-background.vis-selected {

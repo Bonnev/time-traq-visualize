@@ -18,7 +18,7 @@ const EditorSchema: object = {
 	type: 'object',
 	options: {
 		collapsed: true,
-		disable_properties: true
+		no_additional_properties: true
 	},
 	properties: {
 		alwaysHideGroups: {
@@ -46,6 +46,10 @@ const EditorSchema: object = {
 			items: {
 				type: 'object'
 			}
+		},
+		timeTraqFolder: {
+			type: 'string',
+			required: false
 		}
 	}
 };
