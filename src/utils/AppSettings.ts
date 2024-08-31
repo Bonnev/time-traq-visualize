@@ -50,6 +50,10 @@ const EditorSchema: object = {
 		timeTraqFolder: {
 			type: 'string',
 			required: false
+		},
+		timeTraqNagFolder: {
+			type: 'string',
+			required: false
 		}
 	}
 };

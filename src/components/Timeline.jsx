@@ -10,6 +10,8 @@ import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // 
 import { ControlledMenu, MenuItem, useMenuState } from '@szhsin/react-menu';
 import '@szhsin/react-menu/dist/index.css';
 
+import '../styles/Timeline.css';
+
 // utils
 import { randomColor, randomColorRGBA } from '../utils/colorUtils.ts';
 import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
@@ -20,6 +22,7 @@ import { TimeAndDate, Duration } from '../utils/dateTimeUtils.ts';
 import { setAsyncTimeout } from '../utils/callbackPromise.ts';
 import * as Neutralino from '@neutralinojs/lib';
 import { fileDroppedHandler } from '../utils/timelineUtils.ts';
+import { toast } from 'react-toastify';
 
 patchItemSet(vis.util, vis.timeline);
 
@@ -32,9 +35,10 @@ const html = innerHTML => {
 	return el;
 };
 
-const Timeline = ({ fileData: fileDataProp, nagLines = [] }) => {
+const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const [fileData, setFileData] = useState(fileDataProp);
 	const { data: dataProp = [], fileName } = fileData;
+	const [nagLines, setNagLines] = useState(nagLinesProp);
 
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
@@ -42,6 +46,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines = [] }) => {
 
 	const [timeTraqLogsPopupOpen, setTimeTraqLogsPopupOpen] = useState(false);
 	const [timeTraqLogs, setTimeTraqLogs] = useState([]);
+	const [timeTraqNags, setTimeTraqNags] = useState([]);
 
 	const [statisticsPopupOpen, setStatisticsPopupOpen] = useState(false);
 	const allGroups = useRef();
@@ -66,16 +71,32 @@ const Timeline = ({ fileData: fileDataProp, nagLines = [] }) => {
 	// const nextDate = '2022-04-08';
 
 	useEffect(() => {
-		AppSettings.waitAndLoadSettings()
-			.then(settings => { setAppSettings(settings); return settings; })
-			.then(settings => Neutralino.filesystem.readDirectory(settings.timeTraqFolder))
-			.then(logs => logs.filter(log => log.entry.match(/^test-\d{4}\.\d{2}\.\d{2}.txt$/g)))
-			.then(logs => {
-				if (logs.length) {
-					setTimeTraqLogs(logs);
-					setTimeTraqLogsPopupOpen(true);
-				}
-			});
+		(async () => {
+			const settings = await AppSettings.waitAndLoadSettings();
+			setAppSettings(settings);
+
+			let [logs, nags] = await Promise.allSettled([
+				settings.timeTraqFolder && Neutralino.filesystem.readDirectory(settings.timeTraqFolder), // if not set, resolve with undefined
+				settings.timeTraqNagFolder && Neutralino.filesystem.readDirectory(settings.timeTraqNagFolder) // if not set, resolve with undefined
+			]);
+
+			logs = logs.status === 'fulfilled' ? logs.value : (toast.error('Time Traq Folder invalid') && null); // if rejected, toast and return null
+			nags = nags.status === 'fulfilled' ? nags.value : (toast.error('Time Traq Nag Folder invalid') && null); // if rejected, toast and return null
+
+			logs = logs && logs.filter(log => log.entry.match(/^test-\d{4}\.\d{2}\.\d{2}.txt$/g));
+			nags = nags && nags.filter(log => log.entry.match(/^\d{2}-\d{2}-\d{2}.txt$/g));
+
+			if (logs?.length) {
+				logs.sort((a, b) => b.entry.localeCompare(a.entry));
+				setTimeTraqLogs(logs);
+				setTimeTraqLogsPopupOpen(true);
+			}
+			if (nags?.length) {
+				nags.sort((a, b) => b.entry.localeCompare(a.entry));
+				setTimeTraqNags(nags);
+				setTimeTraqLogsPopupOpen(true);
+			}
+		})();
 	}, []);
 
 	const hideGroups = useCallback(groups => {
@@ -189,7 +210,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines = [] }) => {
 				visible: true
 			}), 10);
 		}
-	}, [nagLines]);
+	}, [nagLines, nagLinesProp]);
 
 	const timelineDivContextMenuHandler = useCallback((e) => {
 		e.preventDefault();
@@ -620,20 +641,27 @@ const Timeline = ({ fileData: fileDataProp, nagLines = [] }) => {
 		</div>;
 	};
 
-	const loadTimeTraqLog = log => () => {
+	const loadTimeTraqFile = file => () => {
 		Neutralino.filesystem
-			.readFile(log.path)
-			.then(fileContents => fileDroppedHandler(setFileData, (l) => nagLines = l, fileContents, log.entry));
+			.readFile(file.path)
+			.then(fileContents => fileDroppedHandler(setFileData, setNagLines, fileContents, file.entry));
 	};
 
 	const getTimeTraqLogs = () => {
 		if (!timeTraqLogs.length) return;
 
-		return timeTraqLogs
-			.map(log => <Fragment key={log.entry}>
-				<button type="button" onClick={loadTimeTraqLog(log)}>{log.entry}</button>
-				<br />
-			</Fragment>);
+		return <div className='flex-container-with-equal-children'>
+			<div style={{ textAlign: 'center' }}>
+				<strong>Logs</strong>
+				{timeTraqLogs.map(log =>
+					<button key={log.entry} type="button" onClick={loadTimeTraqFile(log)}>{log.entry}</button>)}
+			</div>
+			<div style={{ textAlign: 'center' }}>
+				<strong>Nags</strong>
+				{timeTraqNags.map(nag =>
+					<button key={nag.entry} type="button" onClick={loadTimeTraqFile(nag)}>{nag.entry}</button>)}
+			</div>
+		</div>;
 	};
 
 	return (<>
@@ -680,7 +708,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines = [] }) => {
 			left={10}
 			initialWidth={800}
 			initialHeight={400}
-			className="my-modal-custom-class"
+			className="time-traq-log-popup"
 			onClose={hideTimeTraqLogsPopup}
 			isOpen={timeTraqLogsPopupOpen}>
 
