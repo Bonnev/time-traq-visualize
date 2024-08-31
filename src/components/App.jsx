@@ -1,16 +1,16 @@
 import { React, useEffect, useState, useRef, useCallback, Fragment } from 'react';
 
-import ChartJs from './ChartJs.jsx';
-import FileDropper from './FileDropper.jsx';
-import Timeline from './Timeline.jsx';
-import { fileDroppedHandler } from '../utils/timelineUtils.ts';
+import ChartJs from './ChartJs';
+import FileDropper from './FileDropper';
+import Timeline from './Timeline';
+import { fileDroppedHandler } from '../utils/timelineUtils';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
-import Statistics from './Statistics.jsx';
+import Statistics from './Statistics';
 import Popup from './Popup';
 import * as Neutralino from '@neutralinojs/lib';
-import AppSettings, { SETTINGS_NAME } from '../utils/AppSettings.ts';
+import AppSettings, { SETTINGS_NAME } from '../utils/AppSettings';
 import { JSONEditor } from '@json-editor/json-editor';
 
 const DEFAULT_FILE_PATH = 'C:\\input.txt';

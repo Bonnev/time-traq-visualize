@@ -13,15 +13,15 @@ import '@szhsin/react-menu/dist/index.css';
 import '../styles/Timeline.css';
 
 // utils
-import { randomColor, randomColorRGBA } from '../utils/colorUtils.ts';
-import patchItemSet from '../utils/vis-timeline-background-tooltip-patch.js';
-import usePrevValue from '../utils/usePrevValue.ts';
-import FileSettings from '../utils/FileSettings.ts';
+import { randomColor, randomColorRGBA } from '../utils/colorUtils';
+import patchItemSet from '../utils/vis-timeline-background-tooltip-patch';
+import usePrevValue from '../utils/usePrevValue';
+import FileSettings from '../utils/FileSettings';
 import AppSettings from '../utils/AppSettings';
-import { TimeAndDate, Duration } from '../utils/dateTimeUtils.ts';
-import { setAsyncTimeout } from '../utils/callbackPromise.ts';
+import { TimeAndDate, Duration } from '../utils/dateTimeUtils';
+import { setAsyncTimeout } from '../utils/callbackPromise';
 import * as Neutralino from '@neutralinojs/lib';
-import { fileDroppedHandler } from '../utils/timelineUtils.ts';
+import { fileDroppedHandler } from '../utils/timelineUtils';
 import { toast } from 'react-toastify';
 
 patchItemSet(vis.util, vis.timeline);
