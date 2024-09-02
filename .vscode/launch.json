@@ -8,9 +8,9 @@
 			"type": "msedge",
 			"request": "launch",
 			"name": "Debug in browser",
-			"url": "http://127.0.0.1:5173/",
+			"url": "http://localhost:5173/",
 			"webRoot": "${workspaceFolder}",
-			"preLaunchTask": "npm: start"
+			"preLaunchTask": "start"
 		}
 	]
 }

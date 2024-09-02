@@ -2,8 +2,9 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "npm",
-			"script": "start",
+			"type": "shell",
+			"command": "nvm use 20 && yarn start",
+			"label": "start",
 			"detail": "Runs the start script, running both vite and neu. The debug browser window will run after this task, so that should be used in combination with vscode",
 			"isBackground": true,
 			"problemMatcher": {
