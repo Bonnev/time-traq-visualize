@@ -3,6 +3,23 @@ import ReactDOM from 'react-dom/client';
 import App from './components/App.jsx';
 import { app, events, init, window as neuWindow } from '@neutralinojs/lib';
 
+import initt from './as/index.ts?init';
+
+const fib = (n) => {
+	if (n <= 1) return n;
+	return fib(n - 1) + fib(n - 2);
+};
+
+initt().then(module => {
+	const { fibonacci } = module.exports;
+	console.time('wasm');
+	console.log(fibonacci(40));
+	console.timeEnd('wasm');
+	console.time('js');
+	console.log(fib(40));
+	console.timeEnd('js');
+});
+
 // import reportWebVitals from './utils/reportWebVitals';
 
 import './styles/index.css';
