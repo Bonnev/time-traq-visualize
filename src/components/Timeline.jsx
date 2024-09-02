@@ -21,24 +21,20 @@ import AppSettings from '../utils/AppSettings';
 import { TimeAndDate, Duration } from '../utils/dateTimeUtils';
 import { setAsyncTimeout } from '../utils/callbackPromise';
 import * as Neutralino from '@neutralinojs/lib';
-import { fileDroppedHandler } from '../utils/timelineUtils';
+import { calculateTimelineItems, fileDroppedHandler, getTimelineOptions, html, processNagLines } from '../utils/timelineUtils';
 import { toast } from 'react-toastify';
 
 patchItemSet(vis.util, vis.timeline);
 
 const NAGS_GROUP_ID = 'nags';
 
-const html = innerHTML => {
-	innerHTML = innerHTML.replaceAll('\n', '<br />');
-	const el = document.createElement('span');
-	el.innerHTML = innerHTML;
-	return el;
-};
-
 const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const [fileData, setFileData] = useState(fileDataProp);
 	const { data: dataProp = [], fileName } = fileData;
+	useEffect(() => setFileData(fileDataProp), [fileDataProp]);
+
 	const [nagLines, setNagLines] = useState(nagLinesProp);
+	useEffect(() => setNagLines(nagLinesProp), [nagLinesProp]);
 
 	// eslint-disable-next-line react/hook-use-state
 	const [, updateState] = useState();
@@ -56,7 +52,6 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const markers = useRef([]);
 	const task = useRef('');
 	const items = useRef([]);
-	const backgroundsByTask = useRef({});
 	const fileSettings = useRef(new FileSettings());
 
 	const [appSettings, setAppSettings] = useState();
@@ -121,97 +116,6 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		}
 	}, []);
 
-	const groupTemplate = useCallback((group) => {
-		if (!group) return null;
-		const container = document.createElement('div');
-
-		const label = document.createElement('span');
-		label.innerHTML = group.content + ' ';
-		container.insertAdjacentElement('afterBegin', label);
-
-		const hide = document.createElement('button');
-		hide.innerHTML = 'Hide';
-		hide.style.fontSize = 'small';
-		hide.addEventListener('click', function () {
-			hideGroups([group]);
-		});
-		container.insertAdjacentElement('beforeEnd', hide);
-
-		const alwaysHide = document.createElement('button');
-		alwaysHide.innerHTML = 'Always hide';
-		alwaysHide.style.fontSize = 'small';
-		alwaysHide.addEventListener('click', function () {
-			appSettings.addGroupToAlwaysHide(group.content);
-			hideGroups([group]);
-		});
-		container.insertAdjacentElement('beforeEnd', alwaysHide);
-
-		return container;
-	}, [appSettings, hideGroups]);
-
-	useEffect(() => {
-		if (nagLines.length && allGroups.current) {
-			const stylesByTask = {};
-			const nagItems = [];
-			let currentItemStartDate;
-			let currentTask;
-
-			for (let i = 0; i < nagLines.length; i++){
-				const line = nagLines[i];
-				const parts = line.split('\t');
-
-				if (i === 0) {
-					currentItemStartDate = parts[0].split('T')[1];
-					currentTask = parts[1];
-					continue;
-				}
-
-				const previousLine = nagLines[i - 1];
-				const previousParts = previousLine.split('\t');
-
-				if (parts[1] === 'PAUSED' || (parts[1] !== 'RESUMED' && parts[1] !== currentTask)) {
-					const end = parts[1] === 'PAUSED' ? parts[0] : previousParts[0];
-					nagItems.push({
-						task: currentTask,
-						start: currentItemStartDate,
-						end: end.split('T')[1],
-						color: stylesByTask[previousParts[1]] = stylesByTask[previousParts[1]] || randomColor()
-					});
-					currentItemStartDate = parts[0].split('T')[1];
-					currentTask = parts[1] === 'PAUSED' ? currentTask : parts[1];
-					continue;
-				}
-
-				if (parts[1] === 'RESUMED') {
-					// Skip all subsequent paused/resumed
-					while (++i !== nagLines.length - 1 &&
-							nagLines[i].split('\t')[1] === 'PAUSED' &&
-							nagLines[i].split('\t')[1] === 'RESUMED');
-
-					if (i < nagLines.length) {
-						currentItemStartDate = nagLines[i - 1].split('\t')[0].split('T')[1];
-						currentTask = nagLines[i].split('\t')[1];
-					}
-				}
-			}
-
-			nagItems.forEach((item, index) => items.current.update({
-				id: NAGS_GROUP_ID + index,
-				content: item.task,
-				title: html(`${item.task}\n${item.start} -> ${item.end}`),
-				start: timelineDate + ' ' + item.start,
-				end: timelineDate + ' ' + item.end,
-				group: NAGS_GROUP_ID,
-				style: `background-color: ${item.color}`
-			}));
-
-			setTimeout(() => allGroups.current.update({
-				id: NAGS_GROUP_ID,
-				visible: true
-			}), 10);
-		}
-	}, [nagLines, nagLinesProp]);
-
 	const timelineDivContextMenuHandler = useCallback((e) => {
 		e.preventDefault();
 		setAnchorPoint({ x: e.clientX, y: e.clientY });
@@ -222,250 +126,30 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		toggleMenu(false);
 	}, [toggleMenu]);
 
-	useEffect(() => {
-		if (!dataProp.length || !appSettings) return;
-
-		let data = dataProp.map(datum => ({ ...datum })); // copy of data
-
-		// if fileName has changed
-		if (prevFileName !== fileName) {
-			FileSettings.newFile(fileName)
-				.then(newSettings => {
-					fileSettings.current = newSettings;
-
-					fileSettings.current.allTasks.forEach(currentTask => {
-						currentTask.pinnedDurations.forEach(pinnedDuration => {
-							const start = pinnedDuration.startDate.format('HH:mm:ss');
-							const endTime = pinnedDuration.startDate.add(pinnedDuration);
-							const end = endTime.format('HH:mm:ss');
-
-							const color = currentTask?.color || randomColorRGBA(0.4);
-
-							const allBackgroundItems = items.current.map(i=>i)
-								.filter(i => typeof i.id === 'string' && i.id.startsWith('background')) // filter background items
-								.map(i => parseInt(i.id.substring('background'.length))); // get their ids e.g. 'background15' -> 15
-
-							const maxId = allBackgroundItems.length ? Math.max.apply(null, allBackgroundItems) : 0;
-							const id = 'background' + (maxId + 1);
-
-							items.current.add([{
-								id: id,
-								content: '',
-								title: html(`(${currentTask.taskName})\n${start} -> ${end}\n(${pinnedDuration.toPrettyString()})`),
-								start: timelineDate + ' ' + start,
-								end: timelineDate + ' ' + end,
-								style: `background-color: ${color}`,
-								taskName: currentTask.taskName,
-								type: 'background',
-							}]);
-						});
-					});
-
-					forceUpdate();
-				});
+	const initializeTimeline = useCallback((alwaysReinitialize) => {
+		if (timeline.current && !alwaysReinitialize) {
+			return;
 		}
 
-		// DOM element where the Timeline will be attached
-		const container = document.getElementById('visualization');
-
-		let unique = [];
-		backgroundsByTask.current = {};
-
-		// group items matching these regexes and copy them to new groups
-		// the imposibleregextomach is so that we always start with 1 - the extractedIndex is used in checks when sorting further down
-		const groupsToCopy = ['imposibleregextomach', ...appSettings.getGroupsToCopy()];
-		let dataToAppend = [];
-		data.forEach((datum) => {
-			const matchingGroupIndex = groupsToCopy.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
-			if (matchingGroupIndex > -1) {
-				const matches = datum.title.match(new RegExp(groupsToCopy[matchingGroupIndex], 'g'));
-				if (matches) {
-					matches.forEach(match =>
-						dataToAppend.push({ ...datum, process: match, label: match, extractedIndex: matchingGroupIndex, title: `${datum.title} (${datum.process})` })
-					);
-				}
-			}
-		});
-		data = data.concat(dataToAppend);
-
-		// group items matching these regexes and separate them into new groups
-		const groupsToExtract = appSettings.getGroupsToExtract().map(group => Object.keys(group)[0]);
-		const extractNewNames = appSettings.getGroupsToExtract().map(group => Object.values(group)[0]);
-		data.forEach((datum) => {
-			const matchingGroupIndex = groupsToExtract.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
-			if (matchingGroupIndex > -1) {
-				const matches = datum.title.match(new RegExp(groupsToExtract[matchingGroupIndex], 'g'));
-				if (matches) {
-					// change process and label, grouping will happen automatically with the main logic
-					datum.process = extractNewNames[matchingGroupIndex];
-					datum.label = extractNewNames[matchingGroupIndex];
-				}
-			}
-		});
-
-		// rename items matching the key regexes with the value strings (including groups)
-		const itemsToRename = appSettings.getItemsToRename().map(group => Object.keys(group)[0]);
-		const itemsToRenameNewNames = appSettings.getItemsToRename().map(group => Object.values(group)[0]);
-		data.forEach((datum) => {
-			const matchingGroupIndex = itemsToRename.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
-			if (matchingGroupIndex > -1) {
-				// change title and content
-				datum.title = datum.title.replace(new RegExp(itemsToRename[matchingGroupIndex], 'g'), itemsToRenameNewNames[matchingGroupIndex]);
-				datum.content = datum.title;
-			}
-		});
-
-		data.forEach((datum) => {
-			if (!unique.map(u => u.label).includes(datum.label)) {
-				unique.push(datum);
-			} else {
-				unique.find(u => u.label === datum.label).number += datum.number;
-			}
-		});
-
-		unique = unique.map(u => Object.assign(u, { color: randomColor() }));
-
-		unique.sort((a, b) => {
-			if (a.extractedIndex && b.extractedIndex && b.extractedIndex - a.extractedIndex === 0) {
-				return b.number - a.number;
-			} else if (a.extractedIndex && b.extractedIndex) {
-				return a.extractedIndex - b.extractedIndex;
-			} else if (a.extractedIndex && !b.extractedIndex) {
-				return 1;
-			} else if (b.extractedIndex && !a.extractedIndex) {
-				return -1;
-			} else {
-				return b.number - a.number;
-			}
-		});
-
-		const subgroupsMap = new Map();
-		const subgroupsItemsMap = new Map();
-		let subgroups = data.map((u, id) => ({
-			id: 'subgroup' + id,
-			content: u.content,
-			treeLevel: 2,
-			process: u.process,
-			style: `background-color: ${randomColor()}`
-		}));
-
-		// remove duplicates
-		subgroups = subgroups.reduce((acc, current) => !acc.find(el => el.content === current.content) ? acc.concat([current]) : acc, []);
-
-		subgroups.forEach(u => subgroupsMap.get(u.process) ? subgroupsMap.set(u.process, subgroupsMap.get(u.process).concat([u.id])) : subgroupsMap.set(u.process, [u.id]));
-		subgroups.forEach(u => subgroupsItemsMap.set(u.content, u.id));
-
-		const groupsMap = new Map();
-		const groups = unique.map((u, id) => ({
-			id: 'group' + id + subgroups[subgroups.length - 1].id + 1,
-			content: u.process,
-			nestedGroups: subgroupsMap.get(u.process) || undefined,
-			showNested: false,
-			color: u.color,
-			style: `background-color: ${u.color}`
-		}));
-		groups.forEach(u => groupsMap.set(u.content, u));
-		groups.unshift({ id: 'all', content: 'All' });
-		groups.unshift({ id: NAGS_GROUP_ID, content: 'Nags', visible: false });
-
-		subgroups = subgroups.map(sub => Object.assign(sub, { style: `background-color: ${groupsMap.get(sub.process).color}` }));
-
-		let dataset = data.map((u, ind) => ({
-			id: ind,
-			content: `${u.content} (${u.process})`,
-			title: html(`${u.title}\n${u.start} -> ${u.end}\n(${u.process})`),
-			start: u.start,
-			end: u.end,
-			selectable: false,
-			group: groupsMap.get(u.process).id,
-			style: `background-color: ${groupsMap.get(u.process).color}`
-		}));
-
-		let globalEnd;
-		const groupEnds = {};
-		dataset.forEach(datum => {
-			const currentEnd = datum.end;
-			const currentGroup = datum.group;
-			const groupEnd = groupEnds[currentGroup];
-
-			if(!groupEnd || TimeAndDate.parse(groupEnd, 'YYYY-MM-DD HH:mm:ss').isBefore(TimeAndDate.parse(currentEnd, 'YYYY-MM-DD HH:mm:ss'))) {
-				groupEnds[currentGroup] = currentEnd;
-			}
-
-			if(!globalEnd || TimeAndDate.parse(globalEnd, 'YYYY-MM-DD HH:mm:ss').isBefore(TimeAndDate.parse(currentEnd, 'YYYY-MM-DD HH:mm:ss'))) {
-				globalEnd = currentEnd;
-			}
-		});
-
-		const endBackgrounds = Object.entries(groupEnds).map(([group, end])=>({
-			id:'endbackground' + group,
-			group: group,
-			content: 'END',
-			start: end,
-			end: globalEnd,
-			selectable: false,
-			style: 'background-color: red; opacity: 0.3',
-			type: 'background',
-		}));
-
-		/*for (let i = 1; i < dataset.length; i++) {
-			if (dataset[i-1].content === dataset[i].content && dataset[i-1].end === dataset[i].start) {
-				dataset[i-1].end = dataset[i].end;
-				dataset.splice(i, 1);
-				i--;
-			}
-		}*/
-
-		const subgroupDataset = data.map((u, ind) => ({
-			id: ind + dataset[dataset.length - 1].id + 1,
-			content: `${u.content} (${u.process})`,
-			title: u.title,
-			start: u.start,
-			end: u.end,
-			selectable: false,
-			group: subgroupsItemsMap.get(u.content)
-		}));
-		dataset = dataset.concat(subgroupDataset);
-
-		const allDataset = data.map((u, id) => ({
-			id: 'all' + id,
-			content: `${u.content} (${u.process})`,
-			title: u.title,
-			start: u.start,
-			end: u.end,
-			selectable: false,
-			group: 'all',
-			style: `background-color: ${groupsMap.get(u.process).color}`
-		}));
-		dataset = dataset.concat(allDataset);
-
-		dataset = dataset.concat(endBackgrounds);
-		items.current = new DataSet(dataset);
-
-		allGroups.current = new DataSet(groups.concat(subgroups));
+		items.current = new DataSet([]);
+		allGroups.current = new DataSet([{ id: NAGS_GROUP_ID, content: 'Nags', visible: false },]);
+		window.allGroups = (allGroups.current);
 		nonHiddenGroups.current = allGroups.current.getIds();
 
 		// Configuration for the Timeline
-		const options = {
-			stack: false,
-			tooltip: {
-				followMouse: true,
-				delay: 0
-			},
-			orientation: 'both',
-			multiselect: true,
-			groupTemplate: groupTemplate,
-		};
+		const options = getTimelineOptions(appSettings.addGroupToAlwaysHide, hideGroups);
 
 		timeline.current && timeline.current.destroy();
 
+		const container = document.getElementById('visualization');
 		const timelineLocal = new vis.Timeline(container, items.current, options);
 
+		timeline.current = timelineLocal;
 		window.timeline = timelineLocal;
 
 		timelineLocal.setGroups(allGroups.current);
 
-		timelineLocal.on('doubleClick', function (properties) {
+		timeline.current.on('doubleClick', function (properties) {
 			const eventProps = timeline.current.getEventProperties(properties.event);
 
 			// if doule-clicked on an existing marker
@@ -531,21 +215,21 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 			}
 		});
 
-		timelineLocal.on('contextmenu', (properties) => {
+		timeline.current.on('contextmenu', (properties) => {
 			if (properties.item?.startsWith('background')) {
-				if (!timelineLocal.getSelection().length || !timelineLocal.getSelection().includes(properties.item)) {
-					timelineLocal.setSelection([properties.item]);
+				if (!timeline.current.getSelection().length || !timeline.current.getSelection().includes(properties.item)) {
+					timeline.current.setSelection([properties.item]);
 				}
 
 				timelineDivContextMenuHandler(properties.event);
 			}
 		});
 
-		timelineLocal.on('click', (/*properties*/) => {
+		timeline.current.on('click', (/*properties*/) => {
 			contextMenuOnCloseHandler();
 		});
 
-		timelineLocal.on('rangechanged', function (/*properties*/) {
+		timeline.current.on('rangechanged', function (/*properties*/) {
 			setAsyncTimeout(undefined, () =>
 				// change cursor to wait (hourglass)
 				document.documentElement.classList.add('wait')
@@ -554,16 +238,106 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 				allGroups.current.update(nonHiddenGroups.current.map(g => ({ id: g, visible: true })))
 			).thenCallback(10, () => { // trigger repaint
 				// get all visible items so that we can hide all groups that have no visible items
-				let items = timelineLocal.getVisibleItems();
+				let items = timeline.current.getVisibleItems();
 				items = items.filter(item => !item.startsWith || !item.startsWith('endbackground'));
 
-				const visibleGroupIds = new Set(items.map(item => timelineLocal.itemsData.get(item).group));
+				const visibleGroupIds = new Set(items.map(item => timeline.current.itemsData.get(item).group));
 				const invisibleGroupIds = nonHiddenGroups.current.filter(group => !visibleGroupIds.has(group));
 
 				allGroups.current.update(invisibleGroupIds.map(g => ({ id: g, visible: false })));
 				document.documentElement.classList.remove('wait'); // revert cursor to default
 			});
 		});
+	}, [appSettings, hideGroups, contextMenuOnCloseHandler, timelineDivContextMenuHandler, forceUpdate]);
+
+	useEffect(() => {
+		if (!nagLines.length || !appSettings) {
+			return;
+		}
+
+		if (timeline.current) {
+			const all = items.current.getIds().filter(id => ('' + id).startsWith(NAGS_GROUP_ID));
+			items.current.remove(all);
+		}
+		initializeTimeline(false);
+
+		nagLines.forEach((item, index) => items.current.update({
+			id: NAGS_GROUP_ID + index,
+			content: item.task,
+			title: html(`${item.task}\n${item.start} -> ${item.end}`),
+			start: timelineDate + ' ' + item.start,
+			end: timelineDate + ' ' + item.end,
+			group: NAGS_GROUP_ID,
+			style: `background-color: ${item.color}`
+		}));
+
+		setTimeout(() => {
+			allGroups.current.update({
+				id: NAGS_GROUP_ID,
+				visible: true
+			});
+			timeline.current.fit();
+		}, 10);
+	}, [nagLines, nagLinesProp, hideGroups, appSettings]);
+
+	useEffect(() => {
+		if (!dataProp.length || !appSettings) return;
+
+		let data = dataProp.map(datum => ({ ...datum })); // copy of data
+
+		// if fileName has changed
+		if (prevFileName !== fileName) {
+			FileSettings.newFile(fileName)
+				.then(newSettings => {
+					fileSettings.current = newSettings;
+
+					fileSettings.current.allTasks.forEach(currentTask => {
+						currentTask.pinnedDurations.forEach(pinnedDuration => {
+							const start = pinnedDuration.startDate.format('HH:mm:ss');
+							const endTime = pinnedDuration.startDate.add(pinnedDuration);
+							const end = endTime.format('HH:mm:ss');
+
+							const color = currentTask?.color || randomColorRGBA(0.4);
+
+							const allBackgroundItems = items.current.map(i=>i)
+								.filter(i => typeof i.id === 'string' && i.id.startsWith('background')) // filter background items
+								.map(i => parseInt(i.id.substring('background'.length))); // get their ids e.g. 'background15' -> 15
+
+							const maxId = allBackgroundItems.length ? Math.max.apply(null, allBackgroundItems) : 0;
+							const id = 'background' + (maxId + 1);
+
+							items.current.add([{
+								id: id,
+								content: '',
+								title: html(`(${currentTask.taskName})\n${start} -> ${end}\n(${pinnedDuration.toPrettyString()})`),
+								start: timelineDate + ' ' + start,
+								end: timelineDate + ' ' + end,
+								style: `background-color: ${color}`,
+								taskName: currentTask.taskName,
+								type: 'background',
+							}]);
+						});
+					});
+
+					forceUpdate();
+				});
+		}
+
+		const dataset = [];
+		const groups = [];
+		calculateTimelineItems(data, appSettings.getGroupsToCopy(), appSettings.getGroupsToExtract(), appSettings.getItemsToRename(), dataset, groups);
+
+		if (timeline.current) {
+			const all = items.current.getIds().filter(id => !('' + id).startsWith(NAGS_GROUP_ID));
+			items.current.remove(all);
+			allGroups.current.remove(allGroups.current.getIds().filter(id => !('' + id).startsWith(NAGS_GROUP_ID)));
+		}
+		initializeTimeline(false);
+		allGroups.current.add(groups);
+		timeline.current.itemsData.add(dataset);
+		timeline.current.fit();
+
+		Neutralino.window.setTitle(`TimeTraq Visualize - ${fileName}`);
 
 		window.onkeyup = function (e) {
 			if (e.code === 'Space') {
@@ -571,7 +345,6 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 			}
 		};
 
-		timeline.current = timelineLocal;
 	}, [fileData, fileDataProp, appSettings]);
 
 	useEffect(() => {
