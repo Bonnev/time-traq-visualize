@@ -2,23 +2,29 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './components/App.jsx';
 import { app, events, init, window as neuWindow } from '@neutralinojs/lib';
+import { toast } from 'react-toastify';
 
-import initt from './as/index.ts?init';
+import wasmDataUrl from './as/index.as';
 
-const fib = (n) => {
-	if (n <= 1) return n;
-	return fib(n - 1) + fib(n - 2);
-};
+toast.info(wasmDataUrl.test());
 
-initt().then(module => {
-	const { fibonacci } = module.exports;
-	console.time('wasm');
-	console.log(fibonacci(40));
-	console.timeEnd('wasm');
-	console.time('js');
-	console.log(fib(40));
-	console.timeEnd('js');
-});
+// WebAssembly.compileStreaming(fetch(wasmDataUrl))
+// 	.then(module => WebAssembly.instantiate(module, { env: { abort: (param) => console.error(param) }}))
+// 	.then((param) => {
+// 		const { exports: { test } } = param;
+// 		console.log(test());
+// 	});
+// const { instance: { exports: { test } } } = await WebAssembly.instantiate(module, {})
+
+// const fib = (n) => {
+// 	if (n <= 1) return n;
+// 	return fib(n - 1) + fib(n - 2);
+// };
+
+// console.log(test());
+// initt().then(module => {
+// 	const { test } = module.exports;
+// });
 
 // import reportWebVitals from './utils/reportWebVitals';
 

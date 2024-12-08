@@ -927,6 +927,11 @@ arraybuffer.prototype.slice@^1.0.3:
     is-array-buffer "^3.0.4"
     is-shared-array-buffer "^1.0.2"
 
+as-virtual@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/as-virtual/-/as-virtual-0.2.0.tgz#f498e22ba5291a61f7ce40cfd940e68c3dc587ab"
+  integrity sha512-zI+8VwD6BPUtXrxs4R7v2N+59OAIBRwiiv9nGIMwcQ/w/lspyaualMqM7yok3jMRglKqLkfOx+dCJimeflEJcA==
+
 assemblyscript-regex@^1.6.4:
   version "1.6.4"
   resolved "https://registry.yarnpkg.com/assemblyscript-regex/-/assemblyscript-regex-1.6.4.tgz#b0755b470fc817fdb0957b9d7b5f473b6474e809"
@@ -2493,6 +2498,13 @@ jsesc@^2.5.1:
   resolved "https://registry.yarnpkg.com/jsesc/-/jsesc-2.5.2.tgz#80564d2e483dacf6e8ef209650a67df3f0c283a4"
   integrity sha512-OYu7XEzjkCQ3C5Ps3QIZsQfNpqoJyZZA99wd9aWd05NCtC5pWOkShK2mkL6HXQR6/Cy2lbNdPlZBpuQHXE63gA==
 
+json-as@^0.9.21:
+  version "0.9.21"
+  resolved "https://registry.yarnpkg.com/json-as/-/json-as-0.9.21.tgz#cde244db68b3bd316ee5da45c6996da0e8e5ac4f"
+  integrity sha512-f7VWuRrS5jlZtN0XXHrLDdRNDixIscyPUKmn0lkxIA4YxkKvOEUYTIeggFBtT1FwrZcRN5F/SjDVrQ+7DkAnPQ==
+  dependencies:
+    as-virtual "^0.2.0"
+
 json-buffer@3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.1.tgz#9338802a30d3b6605fbe0613e094008ca8c05a13"
@@ -2578,6 +2590,11 @@ locate-path@^6.0.0:
   integrity sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==
   dependencies:
     p-locate "^5.0.0"
+
+lodash.clonedeep@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
+  integrity sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ==
 
 lodash.defaults@^4.2.0:
   version "4.2.0"
@@ -3595,6 +3612,11 @@ tree-kill@^1.2.2:
   resolved "https://registry.yarnpkg.com/tree-kill/-/tree-kill-1.2.2.tgz#4ca09a9092c88b73a7cdc5e8a01b507b0790a0cc"
   integrity sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==
 
+ts-mixer@^6.0.2:
+  version "6.0.4"
+  resolved "https://registry.yarnpkg.com/ts-mixer/-/ts-mixer-6.0.4.tgz#1da39ceabc09d947a82140d9f09db0f84919ca28"
+  integrity sha512-ufKpbmrugz5Aou4wcr5Wc1UUFWOLhq+Fm6qa6P0w0K5Qw2yhaUoiWszhCVuNQyNwrlGiscHOmqYoAox1PtvgjA==
+
 tslib@^1.8.1, tslib@^1.9.0:
   version "1.14.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
@@ -3765,10 +3787,18 @@ vis-util@^5.0.0:
   resolved "https://registry.yarnpkg.com/vis-util/-/vis-util-5.0.7.tgz#05fdc1b2ce8f58bfd5635de5de3f152b4b7b0c63"
   integrity sha512-E3L03G3+trvc/X4LXvBfih3YIHcKS2WrP0XTdZefr6W6Qi/2nNCqZfe4JFfJU6DcQLm6Gxqj2Pfl+02859oL5A==
 
-vite-plugin-asc@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/vite-plugin-asc/-/vite-plugin-asc-0.0.2.tgz#2ccd6e544ef09dce520458c4939effdc94bbac84"
-  integrity sha512-7OkGNgMEX9nta0TxzRkjXmmhSJ1B/YubeOxNDntfEsfgeRbYKQQSM+CfdzZscd/gdoBdKx/Jnji0wHt9ZfneQA==
+visitor-as@^0.11.4:
+  version "0.11.4"
+  resolved "https://registry.yarnpkg.com/visitor-as/-/visitor-as-0.11.4.tgz#7b2d7b7ac8be86d4741796aa0630af5e471a4744"
+  integrity sha512-uih7AooY2V3LhzobjLqyEQzhYYBGeq0y/rZk295foM1Ko498f24NNXBDyM1SgzcLMFCAT/fpmSRco1BpTIdKNQ==
+  dependencies:
+    lodash.clonedeep "^4.5.0"
+    ts-mixer "^6.0.2"
+
+vite-plugin-assemblyscript@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/vite-plugin-assemblyscript/-/vite-plugin-assemblyscript-1.0.3.tgz#228b476d3e334405cbc8dc66ed61a7239b06ae66"
+  integrity sha512-ttOmJP70Lnqx8n01aMSS85fmwD4fxK4pCaUFLywX2lRa7eRC6JeAsLd9lnTloRsdlLQ4cjFVpg3DK6fGhLAClA==
 
 vite@^5.2.0:
   version "5.2.12"

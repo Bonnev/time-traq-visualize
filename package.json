@@ -21,6 +21,7 @@
     "assemblyscript-regex": "^1.6.4",
     "chart.js": "^3.7.1",
     "component-emitter": "^1.3.0",
+    "json-as": "^0.9.21",
     "keycharm": "^0.4.0",
     "moment": "^2.29.4",
     "prop-types": "^15.8.1",
@@ -34,7 +35,6 @@
     "vis-data": "^7.1.4",
     "vis-timeline": "^7.5.1",
     "vis-util": "^5.0.0",
-    "vite-plugin-asc": "^0.0.2",
     "web-vitals": "^1.0.1",
     "xss": "^1.0.0"
   },
@@ -49,7 +49,9 @@
     "eslint": "^8.2.0",
     "eslint-plugin-react": "^7.31.4",
     "eslint-plugin-react-hooks": "^4.0.8",
-    "vite": "^5.2.0"
+    "visitor-as": "^0.11.4",
+    "vite": "^5.2.0",
+    "vite-plugin-assemblyscript": "^1.0.3"
   },
   "browserslist": {
     "production": [
@@ -67,5 +69,8 @@
     "node": ">=20",
     "npm": ">=10"
   },
-  "main": "index.html"
+  "main": "index.html",
+  "overrides": {
+    "assemblyscript": "$assemblyscript"
+  }
 }
