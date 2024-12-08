@@ -5,6 +5,13 @@ body {
 		sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	background-color: color-mix(in srgb, Canvas, CanvasText 2.5%);
+	color: color-mix(in srgb, CanvasText, Canvas 15%);
+	color-scheme: light dark;
+}
+
+.vis-time-axis > div {
+	color: color-mix(in srgb, CanvasText, Canvas 15%) !important;
 }
 
 code {
@@ -58,6 +65,8 @@ div.flexible-modal-drag-area-left, div.flexible-modal-drag-area-bottom, div.flex
 
 div.flexible-modal {
 	position: fixed;
+	background-color: color-mix(in srgb, Canvas, CanvasText 2.5%);
+	color: color-mix(in srgb, CanvasText, Canvas 15%);
 }
 
 div.flex-container-with-equal-children {

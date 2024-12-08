@@ -27,6 +27,7 @@ import { toast } from 'react-toastify';
 patchItemSet(vis.util, vis.timeline);
 
 const NAGS_GROUP_ID = 'nags';
+const TITLE = 'TimeTraq Visualize';
 
 const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const [fileData, setFileData] = useState(fileDataProp);
@@ -337,7 +338,9 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		timeline.current.itemsData.add(dataset);
 		timeline.current.fit();
 
-		Neutralino.window.setTitle(`TimeTraq Visualize - ${fileName}`);
+		const title = `${TITLE} - ${fileName}`;
+		document.title = title;
+		Neutralino.window.setTitle(title);
 
 		window.onkeyup = function (e) {
 			if (e.code === 'Space') {
@@ -404,14 +407,21 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const hideTimeTraqLogsPopup = useCallback(() => setTimeTraqLogsPopupOpen(false), []);
 
 	const getBackgroundStatistics = () => {
+		if (!fileSettings.current.allTaskNames.length) return;
+
 		let total = new Duration(0);
-		return <div>{fileSettings.current.allTaskNames.map(taskName => {
-			const currentTask = fileSettings.current.getTask(taskName);
-			total = total.add(currentTask.totalDuration);
-			return <Fragment key={currentTask.taskName}>{currentTask.taskName + `: ${currentTask.totalDuration.toPrettyString()}`}<br /></Fragment>;
-		})}
-			Total: {total.toPrettyString()}<br />
-		</div>;
+		const filename = document.title.substring(TITLE.length + ' - '.length); // TODO: There is already a state filename but it's not set for some reason
+		return (
+			<div>
+				<strong>{filename}</strong>
+				<br />
+				{fileSettings.current.allTaskNames.map(taskName => {
+					const currentTask = fileSettings.current.getTask(taskName);
+					total = total.add(currentTask.totalDuration);
+					return <Fragment key={currentTask.taskName}>{currentTask.taskName + `: ${currentTask.totalDuration.toPrettyString()}`}<br /></Fragment>;
+				})}
+				<h5>Total: {total.toPrettyString()}</h5>
+			</div>);
 	};
 
 	const loadTimeTraqFile = file => () => {
