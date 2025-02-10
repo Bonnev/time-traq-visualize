@@ -173,7 +173,7 @@ export const calculateTimelineItems = (
 
 	// group items matching these regexes and separate them into new groups
 	const groupsToExtract = groupsToExtractParam.map(group => Object.keys(group)[0]);
-	const extractNewNames = groupsToExtract.map(group => Object.values(group)[0]);
+	const extractNewNames = groupsToExtractParam.map(group => Object.values(group)[0]);
 	data.forEach((datum) => {
 		const matchingGroupIndex = groupsToExtract.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 		if (matchingGroupIndex > -1) {
@@ -188,7 +188,7 @@ export const calculateTimelineItems = (
 
 	// rename items matching the key regexes with the value strings (including groups)
 	const itemsToRename = itemsToRenameParam.map(group => Object.keys(group)[0]);
-	const itemsToRenameNewNames = itemsToRename.map(group => Object.values(group)[0]);
+	const itemsToRenameNewNames = itemsToRenameParam.map(group => Object.values(group)[0]);
 	data.forEach((datum) => {
 		const matchingGroupIndex = itemsToRename.findIndex(regex => datum.title.match(new RegExp(regex, 'g')));
 		if (matchingGroupIndex > -1) {

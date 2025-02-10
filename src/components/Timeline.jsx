@@ -335,6 +335,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		}
 		initializeTimeline(false);
 		allGroups.current.add(groups);
+		nonHiddenGroups.current = allGroups.current.getIds();
 		timeline.current.itemsData.add(dataset);
 		timeline.current.fit();
 

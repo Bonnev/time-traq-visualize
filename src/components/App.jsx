@@ -32,7 +32,8 @@ const App = () => {
 	}, []);
 
 	useEffect(() => {
-		if (settingsModalOpen && appSettings && !settingsJsonEditor.current) {
+		const container = document.getElementById('settingsJsonEditor');
+		if (settingsModalOpen && appSettings && !container.childNodes.length) {
 			settingsJsonEditor.current = new JSONEditor(document.getElementById('settingsJsonEditor'), {
 				schema: AppSettings.Schema,
 				required_by_default: true,
@@ -41,7 +42,7 @@ const App = () => {
 				startval: appSettings
 			});
 		}
-	});
+	}, [settingsModalOpen, appSettings]);
 
 	const storeSettings = useCallback(() => {
 		const settingsJson = settingsJsonEditor.current.getValue();
@@ -115,7 +116,7 @@ const App = () => {
 							<Fragment key={line}>{line}<br /></Fragment>)}
 					</div>)}
 
-				<div id='settingsJsonEditor' style={{ textAlign: 'left' }} />
+				<div id='settingsJsonEditor' ref={settingsJsonEditor} style={{ textAlign: 'left' }} />
 				<button type="button" onClick={storeSettings}>Save settings</button>
 			</div>
 			<button type="button" className='modal-close' onClick={hideSettingsModal}>
