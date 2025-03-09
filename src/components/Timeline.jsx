@@ -29,6 +29,27 @@ patchItemSet(vis.util, vis.timeline);
 const NAGS_GROUP_ID = 'nags';
 const TITLE = 'TimeTraq Visualize';
 
+function debounce(func, timeout = 300){
+	let timer;
+	return (...args) => {
+		clearTimeout(timer);
+		timer = setTimeout(() => { func.apply(this, args); }, timeout);
+	};
+}
+
+function throttle(callback, limit = 100) {
+	let waiting = false;						// Initially, we're not waiting
+	return function () {						// We return a throttled function
+		if (!waiting) {							// If we're not waiting
+			callback.apply(this, arguments);	// Execute users function
+			waiting = true;						// Prevent future invocations
+			setTimeout(function () {			// After a period of time
+				waiting = false;				// And allow future invocations
+			}, limit);
+		}
+	}
+}
+
 const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const [fileData, setFileData] = useState(fileDataProp);
 	const { data: dataProp = [], fileName } = fileData;
@@ -205,6 +226,8 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 			// TODO: do this only if the right click context menu is closed
 			if (autoMarker.current) {
 				markers.current.push(autoMarker.current);
+				const customTime = timeline.current.customTimes.find(({ customTime }) => customTime.getTime() === autoMarker.current.customTime.getTime())
+				customTime.bar.style.backgroundColor = '#6e94ff';
 				autoMarker.current = null;
 
 				checkAndAddDuration();
@@ -243,26 +266,27 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 			contextMenuOnCloseHandler();
 		});
 
-		timeline.current.on('mouseMove', function (properties) {
+		timeline.current.on('mouseMove', throttle(function (properties) {
 			const eventProps = timeline.current.getEventProperties(properties.event);
 			const mouseDate = eventProps.time;
-			const item = eventProps.item;
 
-			if (!item || typeof item !== 'number') {
-				return;
-			}
+			let items = timeline.current.getVisibleItems();
+			let proximities = items
+				.filter(item => typeof item === 'number') // only normal items
+				.map(item => timeline.current.itemSet.items[item].data) // retrieve the itemData
+				.map(({ start, end }) => [start, end]) // get start and end
+				.flat() // flat all dates
+				.map(date => ({ date, proximity: Math.abs(mouseDate.getTime() - date.getTime()) })); // map to proximity to mouse
+
+			// get item with least proximity
+			const closest = proximities.reduce((acc, curr) => acc.proximity < curr.proximity ? acc : curr, { proximity: Number.MAX_VALUE });
 
 			const timelineData = timeline.current.getWindow();
-			const itemData = timeline.current.itemSet.items[item].data;
 			const timeSpan = timelineData.end.getTime() - timelineData.start.getTime();
-			const proximityStart = Math.abs(mouseDate.getTime() - itemData.start.getTime());
-			const proximityEnd = Math.abs(mouseDate.getTime() - itemData.end.getTime());
 			const thresholdPercentage = 0.02;
 			const threshold = timeSpan * thresholdPercentage;
-			const closeEnough = proximityStart < threshold || proximityEnd < threshold;
-			if (closeEnough) {
-				const start = proximityStart < proximityEnd;
-				const time = start ? itemData.start : itemData.end;
+			if (closest.proximity < threshold) {
+				const time = closest.date;
 				if (!timeline.current.customTimes.some(cTime => cTime.customTime.getTime() == time.getTime() )) {
 					if (autoMarker.current) {
 						timeline.current.removeCustomTime(autoMarker.current.customTime);
@@ -270,19 +294,14 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 
 					const markerText = TimeAndDate.fromDate(time).format('HH:mm:ss');
 					timeline.current.addCustomTime(time, time);
-					timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
-					timeline.current.setCustomTimeMarker(markerText || undefined,  time, false);
+					// timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
+					timeline.current.customTimes.at(-1).bar.style.pointerEvents = 'none'; // disable all mouse interactions
+					timeline.current.customTimes.at(-1).bar.style.backgroundColor = '#bd9115';
+					timeline.current.setCustomTimeMarker(markerText || undefined, time, false);
 					autoMarker.current = { customTime: time, time: markerText };
 				}
 			}
-			console.clear();
-			console.log('Timstart: ', timelineData.start);
-			console.log('Start: ', itemData.start);
-			console.log('Mouse: ', mouseDate);
-			console.log('End: ', itemData.end);
-			console.log('Timend: ', timelineData.end);
-			console.log('ShouldShow: ', proximityStart < threshold || proximityEnd < threshold);
-		});
+		}));
 
 		timeline.current.on('rangechanged', function (/*properties*/) {
 			setAsyncTimeout(undefined, () =>
