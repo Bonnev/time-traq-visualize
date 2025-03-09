@@ -29,6 +29,27 @@ patchItemSet(vis.util, vis.timeline);
 const NAGS_GROUP_ID = 'nags';
 const TITLE = 'TimeTraq Visualize';
 
+function debounce(func, timeout = 300){
+	let timer;
+	return (...args) => {
+		clearTimeout(timer);
+		timer = setTimeout(() => { func.apply(this, args); }, timeout);
+	};
+}
+
+function throttle(callback, limit = 100) {
+	let waiting = false;						// Initially, we're not waiting
+	return function () {						// We return a throttled function
+		if (!waiting) {							// If we're not waiting
+			callback.apply(this, arguments);	// Execute users function
+			waiting = true;						// Prevent future invocations
+			setTimeout(function () {			// After a period of time
+				waiting = false;				// And allow future invocations
+			}, limit);
+		}
+	}
+}
+
 const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const [fileData, setFileData] = useState(fileDataProp);
 	const { data: dataProp = [], fileName } = fileData;
@@ -50,6 +71,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const nonHiddenGroups = useRef([]);
 
 	const timeline = useRef();
+	const autoMarker = useRef();
 	const markers = useRef([]);
 	const task = useRef('');
 	const items = useRef([]);
@@ -127,6 +149,54 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		toggleMenu(false);
 	}, [toggleMenu]);
 
+	const checkAndAddDuration = useCallback(() => {
+		// if markers are even, then we have a start and and an end, so add a background/task
+		if (markers.current.length % 2 === 0) {
+			const start = markers.current[markers.current.length - 2].time;
+			const end = markers.current[markers.current.length - 1].time;
+
+			const startDate = TimeAndDate.parse(start, 'HH:mm:ss');
+			const endDate = TimeAndDate.parse(end, 'HH:mm:ss');
+
+			const duration = endDate.subtract(startDate);
+			const durationWithTime = duration.withStartTime(startDate);
+
+			const taskText = task.current.trim();
+			const currentFileTask = fileSettings.current.getTask(taskText);
+			const color = currentFileTask?.color || randomColorRGBA(0.4);
+
+			window.TimeAndDate = TimeAndDate;
+			window.fileSettings = fileSettings;
+			if (!currentFileTask) {
+				fileSettings.current.setTask(taskText, color, durationWithTime);
+			} else {
+				fileSettings.current.addDurationForTask(taskText, durationWithTime);
+			}
+			forceUpdate();
+
+			const allBackgroundItems = items.current.map(i=>i)
+				.filter(i => typeof i.id === 'string' && i.id.startsWith('background')) // filter background items
+				.map(i => parseInt(i.id.substring('background'.length))); // get their ids e.g. 'background15' -> 15
+
+			const maxId = allBackgroundItems.length ? Math.max.apply(null, allBackgroundItems) : 0;
+			const id = 'background' + (maxId + 1);
+
+			items.current.add([{
+				id: id,
+				content: '',
+				title: html(`(${taskText})\n${start} -> ${end}\n(${duration.toPrettyString()})`),
+				start: timelineDate + ' ' + start,
+				end: timelineDate + ' ' + end,
+				style: `background-color: ${color}`,
+				taskName: taskText,
+				type: 'background',
+			}]);
+
+			markers.current.forEach(m => timeline.current.removeCustomTime(m.customTime));
+			markers.current.length = 0;
+		}
+	}, [forceUpdate]);
+
 	const initializeTimeline = useCallback((alwaysReinitialize) => {
 		if (timeline.current && !alwaysReinitialize) {
 			return;
@@ -153,67 +223,33 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		timeline.current.on('doubleClick', function (properties) {
 			const eventProps = timeline.current.getEventProperties(properties.event);
 
+			// TODO: do this only if the right click context menu is closed
+			if (autoMarker.current) {
+				markers.current.push(autoMarker.current);
+				const customTime = timeline.current.customTimes.find(({ customTime }) => customTime.getTime() === autoMarker.current.customTime.getTime())
+				customTime.bar.style.backgroundColor = '#6e94ff';
+				autoMarker.current = null;
+
+				checkAndAddDuration();
+			}
+
 			// if doule-clicked on an existing marker
-			if (eventProps.what === 'custom-time') {
-				timeline.current.removeCustomTime(eventProps.customTime);
-				markers.current.splice(markers.current.findIndex(m => m.customTime === eventProps.customTime), 1);
-				return;
-			}
+			// if (eventProps.what === 'custom-time') {
+			// 	timeline.current.removeCustomTime(eventProps.customTime);
+			// 	markers.current.splice(markers.current.findIndex(m => m.customTime === eventProps.customTime), 1);
+			// 	return;
+			// }
 
-			// if double-clicked on open space
+			// // if double-clicked on open space
 
-			const markerText = TimeAndDate.fromDate(eventProps.time).format('HH:mm:ss');
+			// const markerText = TimeAndDate.fromDate(eventProps.time).format('HH:mm:ss');
 
-			timeline.current.addCustomTime(eventProps.time, eventProps.time);
-			timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
-			timeline.current.setCustomTimeMarker(markerText || undefined,  eventProps.time, false);
-			markers.current.push({ customTime: eventProps.time, time: markerText });
+			// timeline.current.addCustomTime(eventProps.time, eventProps.time);
+			// timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
+			// timeline.current.setCustomTimeMarker(markerText || undefined,  eventProps.time, false);
+			// markers.current.push({ customTime: eventProps.time, time: markerText });
 
-			// if markers are even, then we have a start and and an end, so add a background/task
-			if (markers.current.length % 2 === 0) {
-				const start = markers.current[markers.current.length - 2].time;
-				const end = markerText;
-
-				const startDate = TimeAndDate.parse(start, 'HH:mm:ss');
-				const endDate = TimeAndDate.parse(end, 'HH:mm:ss');
-
-				const duration = endDate.subtract(startDate);
-				const durationWithTime = duration.withStartTime(startDate);
-
-				const taskText = task.current.trim();
-				const currentFileTask = fileSettings.current.getTask(taskText);
-				const color = currentFileTask?.color || randomColorRGBA(0.4);
-
-				window.TimeAndDate = TimeAndDate;
-				window.fileSettings = fileSettings;
-				if (!currentFileTask) {
-					fileSettings.current.setTask(taskText, color, durationWithTime);
-				} else {
-					fileSettings.current.addDurationForTask(taskText, durationWithTime);
-				}
-				forceUpdate();
-
-				const allBackgroundItems = items.current.map(i=>i)
-					.filter(i => typeof i.id === 'string' && i.id.startsWith('background')) // filter background items
-					.map(i => parseInt(i.id.substring('background'.length))); // get their ids e.g. 'background15' -> 15
-
-				const maxId = allBackgroundItems.length ? Math.max.apply(null, allBackgroundItems) : 0;
-				const id = 'background' + (maxId + 1);
-
-				items.current.add([{
-					id: id,
-					content: '',
-					title: html(`(${taskText})\n${start} -> ${end}\n(${duration.toPrettyString()})`),
-					start: timelineDate + ' ' + start,
-					end: timelineDate + ' ' + end,
-					style: `background-color: ${color}`,
-					taskName: taskText,
-					type: 'background',
-				}]);
-
-				markers.current.forEach(m => timeline.current.removeCustomTime(m.customTime));
-				markers.current.length = 0;
-			}
+			// checkAndAddDuration();
 		});
 
 		timeline.current.on('contextmenu', (properties) => {
@@ -229,6 +265,43 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		timeline.current.on('click', (/*properties*/) => {
 			contextMenuOnCloseHandler();
 		});
+
+		timeline.current.on('mouseMove', throttle(function (properties) {
+			const eventProps = timeline.current.getEventProperties(properties.event);
+			const mouseDate = eventProps.time;
+
+			let items = timeline.current.getVisibleItems();
+			let proximities = items
+				.filter(item => typeof item === 'number') // only normal items
+				.map(item => timeline.current.itemSet.items[item].data) // retrieve the itemData
+				.map(({ start, end }) => [start, end]) // get start and end
+				.flat() // flat all dates
+				.map(date => ({ date, proximity: Math.abs(mouseDate.getTime() - date.getTime()) })); // map to proximity to mouse
+
+			// get item with least proximity
+			const closest = proximities.reduce((acc, curr) => acc.proximity < curr.proximity ? acc : curr, { proximity: Number.MAX_VALUE });
+
+			const timelineData = timeline.current.getWindow();
+			const timeSpan = timelineData.end.getTime() - timelineData.start.getTime();
+			const thresholdPercentage = 0.02;
+			const threshold = timeSpan * thresholdPercentage;
+			if (closest.proximity < threshold) {
+				const time = closest.date;
+				if (!timeline.current.customTimes.some(cTime => cTime.customTime.getTime() == time.getTime() )) {
+					if (autoMarker.current) {
+						timeline.current.removeCustomTime(autoMarker.current.customTime);
+					}
+
+					const markerText = TimeAndDate.fromDate(time).format('HH:mm:ss');
+					timeline.current.addCustomTime(time, time);
+					// timeline.current.customTimes.at(-1).hammer.off('panstart panmove panend'); // disable dragging
+					timeline.current.customTimes.at(-1).bar.style.pointerEvents = 'none'; // disable all mouse interactions
+					timeline.current.customTimes.at(-1).bar.style.backgroundColor = '#bd9115';
+					timeline.current.setCustomTimeMarker(markerText || undefined, time, false);
+					autoMarker.current = { customTime: time, time: markerText };
+				}
+			}
+		}));
 
 		timeline.current.on('rangechanged', function (/*properties*/) {
 			setAsyncTimeout(undefined, () =>
