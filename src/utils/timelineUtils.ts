@@ -201,7 +201,7 @@ export const calculateTimelineItems = (
 	let unique: { label: string, process: string, content: string, title: string, number: number, start: string, end: string, extractedIndex?: number, color?: string }[] = [];
 
 	data.forEach((datum) => {
-		const found = unique.find(u => u.label === datum.label);
+		const found = unique.find(u => u.process === datum.process);
 		if (!found) {
 			unique.push(datum);
 		} else {
