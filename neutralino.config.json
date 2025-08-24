@@ -16,7 +16,8 @@
 		"window.setTitle",
 		"storage.*",
 		"window.focus",
-		"app.exit"
+		"app.exit",
+		"clipboard.readText"
 	],
 	"globalVariables": {
 		"TEST1": "Hello"

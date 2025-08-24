@@ -7,7 +7,7 @@ import * as vis from 'vis-timeline/standalone/esm/vis-timeline-graph2d.min'; // 
 // import * as viss from 'vis-timeline/standalone/esm/vis-timeline-graph2d'; // full source
 // import * as vis from 'vis-timeline';
 
-import { ControlledMenu, MenuItem, useMenuState } from '@szhsin/react-menu';
+import { ControlledMenu, FocusableItem, MenuItem, useMenuState } from '@szhsin/react-menu';
 import '@szhsin/react-menu/dist/index.css';
 
 import '../styles/Timeline.css';
@@ -23,6 +23,8 @@ import { setAsyncTimeout } from '../utils/callbackPromise';
 import * as Neutralino from '@neutralinojs/lib';
 import { calculateTimelineItems, fileDroppedHandler, getTimelineOptions, html, processNagLines } from '../utils/timelineUtils';
 import { toast } from 'react-toastify';
+
+// window.Neutralino = Neutralino;
 
 patchItemSet(vis.util, vis.timeline);
 
@@ -47,8 +49,11 @@ function throttle(callback, limit = 100) {
 				waiting = false;				// And allow future invocations
 			}, limit);
 		}
-	}
+	};
 }
+
+const MENU_MODE_CONTEXT = 'context';
+const MENU_MODE_TASK = 'task';
 
 const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const [fileData, setFileData] = useState(fileDataProp);
@@ -84,6 +89,13 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 
 	const [menuProps, toggleMenu] = useMenuState();
 	const [anchorPoint, setAnchorPoint] = useState({ x: 0, y: 0 });
+	const [menuMode, setMenuMode] = useState(MENU_MODE_CONTEXT);
+	const [clipboardTask, setClipboardTask] = useState('');
+
+	const [menuContentFilter, setMenuContentFilter] = useState('');
+	const menuContentFilterInputHandler = useCallback((e) => {
+		setMenuContentFilter(e.target.value);
+	}, []);
 
 	const timelineDate = '2022-04-07';
 	// const nextDate = '2022-04-08';
@@ -142,14 +154,20 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 	const timelineDivContextMenuHandler = useCallback((e) => {
 		e.preventDefault();
 		setAnchorPoint({ x: e.clientX, y: e.clientY });
+		setMenuMode(MENU_MODE_CONTEXT);
 		toggleMenu(true);
 	}, [toggleMenu]);
 
-	const contextMenuOnCloseHandler = useCallback(() => {
+	const menuOnCloseHandler = useCallback(() => {
+		// remove last marker
+		if (markers.current.length && markers.current.length % 2 === 0) {
+			timeline.current.removeCustomTime(markers.current[markers.current.length - 1].customTime);
+			markers.current.splice(markers.current.length - 1, 1);
+		}
 		toggleMenu(false);
 	}, [toggleMenu]);
 
-	const checkAndAddDuration = useCallback(() => {
+	const checkAndAddDuration = useCallback(event => {
 		// if markers are even, then we have a start and and an end, so add a background/task
 		if (markers.current.length % 2 === 0) {
 			const start = markers.current[markers.current.length - 2].time;
@@ -161,7 +179,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 			const duration = endDate.subtract(startDate);
 			const durationWithTime = duration.withStartTime(startDate);
 
-			const taskText = task.current.trim();
+			const taskText = event.value || task.current.trim();
 			const currentFileTask = fileSettings.current.getTask(taskText);
 			const color = currentFileTask?.color || randomColorRGBA(0.4);
 
@@ -230,7 +248,21 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 				customTime.bar.style.backgroundColor = '#6e94ff';
 				autoMarker.current = null;
 
-				checkAndAddDuration();
+				// if markers are even
+				if (markers.current.length % 2 === 0) {
+					Neutralino.clipboard.readText().then(clipboardTask => {
+						const mouseEvent = properties.event;
+						clipboardTask = clipboardTask
+							.split('\n')[0] // only first line
+							.substring(0, 50) // max 50 chars
+							.trim();
+						setClipboardTask(clipboardTask);
+						setAnchorPoint({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+						setMenuMode(MENU_MODE_TASK);
+						setMenuContentFilter(''); // reset filter
+						toggleMenu(true);
+					});
+				}
 			}
 
 			// if doule-clicked on an existing marker
@@ -263,7 +295,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		});
 
 		timeline.current.on('click', (/*properties*/) => {
-			contextMenuOnCloseHandler();
+			menuOnCloseHandler();
 		});
 
 		timeline.current.on('mouseMove', throttle(function (properties) {
@@ -322,7 +354,7 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 				document.documentElement.classList.remove('wait'); // revert cursor to default
 			});
 		});
-	}, [appSettings, hideGroups, contextMenuOnCloseHandler, timelineDivContextMenuHandler, forceUpdate]);
+	}, [appSettings, hideGroups, menuOnCloseHandler, timelineDivContextMenuHandler, forceUpdate]);
 
 	useEffect(() => {
 		if (!nagLines.length || !appSettings) {
@@ -521,6 +553,54 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		</div>;
 	};
 
+	const getMenuContents = useCallback(() => {
+		if (menuMode === MENU_MODE_CONTEXT) {
+			return <MenuItem onClick={removeSelectedTasks}>
+				Remove selected task{timeline.current?.getSelection().length > 1 && 's'}
+			</MenuItem>;
+		}
+
+		const currentTask = task.current.trim();
+		const tasks = [];
+
+		/* Current task */
+		tasks.push({ label: currentTask || '<empty>', type: 'current', value: currentTask });
+		/* Clipboard */
+		if (clipboardTask && clipboardTask !== currentTask) {
+			tasks.push({ label: clipboardTask, type: 'clipboard', value: clipboardTask });
+		}
+		/* All tasks in drop-down for current file/session */
+		fileSettings.current.allTaskNames
+			.filter(name => name !== currentTask && name !== clipboardTask)
+			.forEach(name => tasks.push({ label: name, type: 'session', value: name }));
+		/* Task from filter */
+		// if none of the tasks match the filter, then add it as a custom task
+		if (menuContentFilter && !tasks.some(task => task.value.toLowerCase() === menuContentFilter.toLowerCase())) {
+			tasks.push({ label: menuContentFilter, type: 'custom', value: menuContentFilter });
+		}
+
+		return <>
+			{ /* Filter and input */}
+			<FocusableItem>
+				{({ ref }) => (
+					<input
+						ref={ref}
+						type="text"
+						placeholder="Type to filter"
+						value={menuContentFilter}
+						onChange={menuContentFilterInputHandler} />
+				)}
+			</FocusableItem>
+
+			{tasks.filter(task => task.value.toLowerCase().includes(menuContentFilter.toLowerCase())).map(task =>
+				<MenuItem key={task.label} onClick={checkAndAddDuration} value={task.value} className='menu-item'>
+					<div>{task.label}</div>
+					<div style={{ color: '#bebebe' }}>{task.type}</div>
+				</MenuItem>)
+			}
+		</>;
+	}, [removeSelectedTasks, menuMode, checkAndAddDuration, clipboardTask, menuContentFilter, menuContentFilterInputHandler]);
+
 	return (<>
 		<div className='flex-container-with-equal-children'>
 			<button type="button" onClick={showStatisticsPopup}>Open statistics</button>
@@ -538,10 +618,8 @@ const Timeline = ({ fileData: fileDataProp, nagLines: nagLinesProp = [] }) => {
 		</div>
 		<div id='visualization' />
 		<ControlledMenu {...menuProps} anchorPoint={anchorPoint}
-			direction="right" onClose={contextMenuOnCloseHandler}>
-			<MenuItem onClick={removeSelectedTasks}>
-				Remove selected task{timeline.current?.getSelection().length > 1 && 's' }
-			</MenuItem>
+			direction="right" onClose={menuOnCloseHandler}>
+			{getMenuContents()}
 		</ControlledMenu>
 		<Popup
 			top={10}
